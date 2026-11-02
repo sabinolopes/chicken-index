@@ -53,6 +53,7 @@ insert into public.economic_settings (id) values (1)
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -66,7 +67,23 @@ create trigger economic_settings_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------
--- RLS: leitura pública, escrita apenas para usuários autenticados
+-- Admin: usuário com app_metadata.role = 'admin'. O app_metadata só pode ser
+-- alterado com a service role (painel/SQL), nunca pelo próprio usuário — então,
+-- mesmo que o cadastro público fique aberto, ninguém além do admin escreve.
+--   update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'
+--   where email = 'seu@email.com';
+-- ---------------------------------------------------------------------
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin', false);
+$$;
+
+-- ---------------------------------------------------------------------
+-- RLS: leitura pública, escrita apenas para o admin
 -- ---------------------------------------------------------------------
 alter table public.chicken_prices    enable row level security;
 alter table public.economic_settings enable row level security;
@@ -79,11 +96,11 @@ drop policy if exists "chicken_prices_auth_delete"   on public.chicken_prices;
 create policy "chicken_prices_public_read" on public.chicken_prices
   for select to anon, authenticated using (true);
 create policy "chicken_prices_auth_insert" on public.chicken_prices
-  for insert to authenticated with check (true);
+  for insert to authenticated with check (public.is_admin());
 create policy "chicken_prices_auth_update" on public.chicken_prices
-  for update to authenticated using (true) with check (true);
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
 create policy "chicken_prices_auth_delete" on public.chicken_prices
-  for delete to authenticated using (true);
+  for delete to authenticated using (public.is_admin());
 
 drop policy if exists "economic_settings_public_read" on public.economic_settings;
 drop policy if exists "economic_settings_auth_update" on public.economic_settings;
@@ -91,7 +108,7 @@ drop policy if exists "economic_settings_auth_update" on public.economic_setting
 create policy "economic_settings_public_read" on public.economic_settings
   for select to anon, authenticated using (true);
 create policy "economic_settings_auth_update" on public.economic_settings
-  for update to authenticated using (true) with check (true);
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- ---------------------------------------------------------------------
 -- Storage: bucket público `price-photos` (fotos .webp já comprimidas)
@@ -109,16 +126,19 @@ on conflict (id) do update set
   file_size_limit    = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+-- Bucket público: as fotos são servidas pela URL pública, sem SELECT para anon
+-- (uma policy de leitura pública permitiria listar todos os arquivos do bucket).
 drop policy if exists "price_photos_public_read" on storage.objects;
 drop policy if exists "price_photos_auth_insert" on storage.objects;
 drop policy if exists "price_photos_auth_update" on storage.objects;
 drop policy if exists "price_photos_auth_delete" on storage.objects;
 
-create policy "price_photos_public_read" on storage.objects
-  for select to anon, authenticated using (bucket_id = 'price-photos');
+drop policy if exists "price_photos_admin_read" on storage.objects;
+create policy "price_photos_admin_read" on storage.objects
+  for select to authenticated using (bucket_id = 'price-photos' and public.is_admin()); -- necessária para excluir
 create policy "price_photos_auth_insert" on storage.objects
-  for insert to authenticated with check (bucket_id = 'price-photos');
+  for insert to authenticated with check (bucket_id = 'price-photos' and public.is_admin());
 create policy "price_photos_auth_update" on storage.objects
-  for update to authenticated using (bucket_id = 'price-photos') with check (bucket_id = 'price-photos');
+  for update to authenticated using (bucket_id = 'price-photos' and public.is_admin()) with check (bucket_id = 'price-photos' and public.is_admin());
 create policy "price_photos_auth_delete" on storage.objects
-  for delete to authenticated using (bucket_id = 'price-photos');
+  for delete to authenticated using (bucket_id = 'price-photos' and public.is_admin());

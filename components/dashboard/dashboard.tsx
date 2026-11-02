@@ -84,7 +84,9 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center text-muted">
-            Nenhum registro encontrado para os filtros selecionados.
+            {data.prices.length === 0
+              ? "Ainda não há preços cadastrados. O primeiro registro aparece aqui assim que for publicado."
+              : "Nenhum registro encontrado para os filtros selecionados."}
           </div>
         )}
 

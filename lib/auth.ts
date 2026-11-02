@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { isSupabaseConfigured } from "./supabase/config";
 import { createServerSupabase } from "./supabase/server";
+import { isAdminUser } from "./admin-role";
+
+export { isAdminUser };
 
 export interface AdminUser {
   email: string;
@@ -15,7 +18,7 @@ export async function getAdmin(): Promise<AdminUser | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user ? { email: user.email ?? "admin", demo: false } : null;
+  return isAdminUser(user) ? { email: user!.email ?? "admin", demo: false } : null;
 }
 
 export async function requireAdmin(): Promise<AdminUser> {

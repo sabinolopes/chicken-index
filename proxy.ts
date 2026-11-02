@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAdminUser } from "@/lib/admin-role";
 import { getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
@@ -28,11 +29,12 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const admin = isAdminUser(user);
   const isLogin = request.nextUrl.pathname.startsWith("/admin/login");
-  if (!user && !isLogin) {
+  if (!admin && !isLogin) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
-  if (user && isLogin) {
+  if (admin && isLogin) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }
   return response;

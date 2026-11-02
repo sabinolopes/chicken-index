@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth";
+import { isAdminUser, requireAdmin } from "@/lib/auth";
 import { PRICES_CACHE_TAG } from "@/lib/data";
 import { isSupabaseConfigured, PHOTO_BUCKET } from "@/lib/supabase/config";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -28,8 +28,12 @@ export async function signIn(_prev: ActionResult | null, form: FormData): Promis
   if (!email || !password) return { ok: false, error: "Informe e-mail e senha." };
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { ok: false, error: "E-mail ou senha incorretos." };
+  if (!isAdminUser(data.user)) {
+    await supabase.auth.signOut();
+    return { ok: false, error: "Esta conta não tem permissão de admin." };
+  }
 
   redirect("/admin");
 }

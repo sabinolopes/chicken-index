@@ -16,8 +16,12 @@ Abra http://localhost:3000. Sem variáveis do Supabase, o site roda em **Modo De
 ## Ligando o Supabase
 
 1. Crie um projeto no Supabase e rode [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor (tabelas, RLS e bucket `price-photos`).
-2. Em **Authentication → Users**, crie o usuário admin.
-3. Em **Authentication → Sign In / Providers**, desative **Allow new users to sign up** — as políticas RLS liberam escrita para qualquer usuário autenticado.
+2. Em **Authentication → Users**, crie o usuário admin e marque-o como admin no SQL Editor:
+   ```sql
+   update auth.users set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}' where email = 'seu@email.com';
+   ```
+   Só usuários com `app_metadata.role = 'admin'` podem escrever (RLS) e entrar no painel.
+3. Em **Authentication → Sign In / Providers**, desative **Allow new users to sign up** (camada extra; as políticas já bloqueiam não-admins).
 4. Copie `.env.example` para `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ## Estrutura
