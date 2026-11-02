@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f5f1;
+  --surface: #ffffff;
+  --foreground: #1c1917;
+  --muted: #57534e;
+  --subtle: #8a847d;
+  --border: #e7e2da;
+  --accent: #b42318;
+
+  /* Séries do gráfico (paleta categórica validada: slots 1–4) */
+  --series-avg: #1c1917;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
