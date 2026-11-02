@@ -173,8 +173,8 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
   return (
     <form onSubmit={handleSubmit} className="space-y-5 pb-24 sm:pb-0">
       {/* 1. Foto */}
-      <fieldset className="rounded-xl border border-border bg-surface p-4">
-        <legend className="px-1 text-sm font-semibold">1. Foto da etiqueta</legend>
+      <fieldset aria-labelledby="step-1" className="rounded-xl border border-border bg-surface p-4">
+        <h2 id="step-1" className="mb-3 font-semibold">1. Foto da etiqueta</h2>
 
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
         <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
@@ -275,8 +275,8 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
       </fieldset>
 
       {/* 2. Preço e produto */}
-      <fieldset className="space-y-4 rounded-xl border border-border bg-surface p-4" disabled={!photo}>
-        <legend className="px-1 text-sm font-semibold">2. Preço e produto</legend>
+      <fieldset aria-labelledby="step-2" className="space-y-4 rounded-xl border border-border bg-surface p-4" disabled={!photo}>
+        <h2 id="step-2" className="font-semibold">2. Preço e produto</h2>
 
         <div>
           <label htmlFor="price_per_kg" className={labelClass}>
@@ -343,8 +343,8 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
       </fieldset>
 
       {/* 3. Local e data */}
-      <fieldset className="space-y-4 rounded-xl border border-border bg-surface p-4" disabled={!photo}>
-        <legend className="px-1 text-sm font-semibold">3. Local e data</legend>
+      <fieldset aria-labelledby="step-3" className="space-y-4 rounded-xl border border-border bg-surface p-4" disabled={!photo}>
+        <h2 id="step-3" className="font-semibold">3. Local e data</h2>
 
         <div>
           <label htmlFor="market_name" className={labelClass}>

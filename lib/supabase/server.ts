@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "./config";
 
@@ -7,6 +8,9 @@ import { getSupabaseEnv } from "./config";
  * ser usado em Server Actions ou em componentes dentro de `<Suspense>`.
  */
 export async function createServerSupabase() {
+  // O cliente lê o relógio (expiração do token): marca a renderização como
+  // de requisição antes disso, exigência do Cache Components.
+  await connection();
   const { url, anonKey } = getSupabaseEnv();
   const cookieStore = await cookies();
 
