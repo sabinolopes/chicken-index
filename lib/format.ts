@@ -30,3 +30,13 @@ export function formatDateTime(iso: string) {
     timeZone: "America/Sao_Paulo",
   }).format(new Date(iso));
 }
+
+/**
+ * Máscara de centavos: só dígitos, preenchidos da direita para a esquerda.
+ * "2" → "0,02", "20" → "0,20", "2000" → "20,00". Vazio continua vazio.
+ */
+export function maskCents(raw: string, maxDigits = 5) {
+  const digits = raw.replace(/\D/g, "").replace(/^0+/, "").slice(0, maxDigits);
+  if (!digits) return "";
+  return (Number(digits) / 100).toFixed(2).replace(".", ",");
+}
