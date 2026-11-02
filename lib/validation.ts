@@ -1,4 +1,4 @@
-import { BRANDS, type StateType } from "./types";
+import { BRANDS, PRICE_KINDS, type PriceKind, type StateType } from "./types";
 
 export const UFS = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
@@ -22,6 +22,7 @@ export function todayInBrazil(now = new Date()) {
 export interface PriceInput {
   brand: string;
   state_type: StateType;
+  price_kind: PriceKind;
   price_per_kg: number;
   market_name: string;
   city: string;
@@ -39,6 +40,7 @@ const text = (value: FormDataEntryValue | null, max = 80) => String(value ?? "")
 export function parsePriceForm(form: FormData): { data: PriceInput } | { error: string } {
   const brand = text(form.get("brand"));
   const stateType = text(form.get("state_type"));
+  const priceKind = text(form.get("price_kind")) || "regular";
   const price = parsePrice(text(form.get("price_per_kg")));
   const market = text(form.get("market_name"));
   const city = text(form.get("city"));
@@ -51,6 +53,7 @@ export function parsePriceForm(form: FormData): { data: PriceInput } | { error: 
 
   if (!(BRANDS as readonly string[]).includes(brand)) return { error: "Selecione a marca." };
   if (stateType !== "resfriado" && stateType !== "congelado") return { error: "Selecione resfriado ou congelado." };
+  if (!(PRICE_KINDS as readonly string[]).includes(priceKind)) return { error: "Tipo de preço inválido." };
   if (!Number.isFinite(price) || price < 1 || price > 500) return { error: "Preço por kg inválido (ex.: 21,99)." };
   if (!market) return { error: "Informe o mercado." };
   if (!city) return { error: "Informe a cidade." };
@@ -65,6 +68,7 @@ export function parsePriceForm(form: FormData): { data: PriceInput } | { error: 
     data: {
       brand,
       state_type: stateType,
+      price_kind: priceKind as PriceKind,
       price_per_kg: price,
       market_name: market,
       city,

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { BadgeCheck, Loader2, Trash2, TriangleAlert } from "lucide-react";
 import { deletePrice } from "@/app/admin/actions";
-import type { ChickenPrice } from "@/lib/types";
+import { PRICE_KIND_LABEL, type ChickenPrice } from "@/lib/types";
 import { formatBRL, formatDate } from "@/lib/format";
 
 export function RecentPrices({ prices, total, demo }: { prices: ChickenPrice[]; total: number; demo: boolean }) {
@@ -52,6 +52,11 @@ export function RecentPrices({ prices, total, demo }: { prices: ChickenPrice[]; 
                 <p className="flex items-center gap-1.5">
                   <span className="font-semibold tabular">{formatBRL(p.price_per_kg)}</span>
                   <span className="text-sm text-muted">{p.brand}</span>
+                  {p.price_kind !== "regular" && (
+                    <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-800">
+                      {PRICE_KIND_LABEL[p.price_kind]}
+                    </span>
+                  )}
                   {p.has_valid_exif ? (
                     <BadgeCheck className="size-4 text-emerald-700" aria-label="EXIF auditado" />
                   ) : (

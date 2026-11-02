@@ -1,5 +1,15 @@
 export type StateType = "resfriado" | "congelado";
 
+/** regular = preço normal de gôndola; oferta = promoção; clube = clube de descontos/fidelidade. */
+export const PRICE_KINDS = ["regular", "oferta", "clube"] as const;
+export type PriceKind = (typeof PRICE_KINDS)[number];
+
+export const PRICE_KIND_LABEL: Record<PriceKind, string> = {
+  regular: "Preço normal",
+  oferta: "Oferta",
+  clube: "Clube de desconto",
+};
+
 export const BRANDS = ["Sadia", "Seara", "Perdigão", "Outra"] as const;
 export type Brand = (typeof BRANDS)[number];
 
@@ -7,6 +17,7 @@ export interface ChickenPrice {
   id: string;
   brand: string;
   state_type: StateType;
+  price_kind: PriceKind;
   price_per_kg: number;
   market_name: string;
   city: string;

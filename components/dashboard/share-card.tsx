@@ -36,7 +36,7 @@ function drawCard(ctx: CanvasRenderingContext2D, { kpis, settings, filterLabel }
 
   ctx.fillStyle = "#1c1917";
   ctx.font = font(500, 36);
-  ctx.fillText("Preço médio do kg hoje", pad, 290);
+  ctx.fillText("Preço médio do kg hoje (sem promoções)", pad, 290);
   ctx.font = font(800, 150);
   ctx.fillText(formatBRL(kpis.currentAvg), pad - 6, 440);
 
@@ -130,7 +130,7 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
 
   const text = [
     `🐔 *Índice do Peito de Frango*${filterLabel ? ` — ${filterLabel}` : ""}`,
-    `Preço médio do kg: *${formatBRL(kpis.currentAvg)}* (${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)})`,
+    `Preço médio do kg (sem promoções): *${formatBRL(kpis.currentAvg)}* (${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)})`,
     `Salário mínimo comprava ${formatKg(kpis.minWageKg.start)}, hoje compra ${formatKg(kpis.minWageKg.now)}.`,
     `Salário médio comprava ${formatKg(kpis.avgWageKg.start)}, hoje compra ${formatKg(kpis.avgWageKg.now)}.`,
     `Fotos auditadas com EXIF + SHA-256.`,

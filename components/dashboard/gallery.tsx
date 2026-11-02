@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, Camera, ChevronDown, MapPin, TriangleAlert } from "lucide-react";
-import type { ChickenPrice } from "@/lib/types";
+import { BadgeCheck, Camera, ChevronDown, MapPin, Tag, TriangleAlert } from "lucide-react";
+import { PRICE_KIND_LABEL, type ChickenPrice, type PriceKind } from "@/lib/types";
 import { formatBRL, formatDate } from "@/lib/format";
 import { PhotoModal } from "./photo-modal";
 
@@ -52,6 +52,9 @@ export function Gallery({ prices }: { prices: ChickenPrice[] }) {
                     decoding="async"
                     className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                  {p.price_kind !== "regular" && (
+                    <PriceKindBadge kind={p.price_kind} className="absolute left-2 top-2 shadow-sm" />
+                  )}
                   <span className="absolute right-2 top-2 rounded-lg bg-foreground/90 px-2 py-1 text-lg font-bold text-white tabular">
                     {formatBRL(p.price_per_kg)}
                     <span className="text-xs font-medium">/kg</span>
@@ -90,6 +93,18 @@ export function Gallery({ prices }: { prices: ChickenPrice[] }) {
 
       {selected && <PhotoModal price={selected} onClose={() => setSelected(null)} />}
     </section>
+  );
+}
+
+/** Selo de oferta/clube: avisa que o preço não é o normal e fica fora do índice. */
+export function PriceKindBadge({ kind, className = "" }: { kind: PriceKind; className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-md bg-rose-600 px-1.5 py-0.5 text-xs font-semibold text-white ${className}`}
+    >
+      <Tag className="size-3.5" aria-hidden />
+      {PRICE_KIND_LABEL[kind]}
+    </span>
   );
 }
 

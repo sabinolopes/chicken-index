@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import type { ChickenPrice } from "@/lib/types";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
-import { AuditBadge } from "./gallery";
+import { AuditBadge, PriceKindBadge } from "./gallery";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -143,6 +143,12 @@ export function PhotoModal({ price, onClose }: { price: ChickenPrice; onClose: (
               <p className="mt-0.5 text-sm text-muted">
                 {price.brand} · <span className="capitalize">{price.state_type}</span>
               </p>
+              {price.price_kind !== "regular" && (
+                <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                  <PriceKindBadge kind={price.price_kind} />
+                  fora do índice de inflação
+                </p>
+              )}
             </div>
             <button
               type="button"

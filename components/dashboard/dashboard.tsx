@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Drumstick, FlaskConical, Share2 } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
-import { computeKpis, weeklySeries } from "@/lib/stats";
+import { computeKpis, isIndexPrice, weeklySeries } from "@/lib/stats";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { EMPTY_FILTERS, Filters, type FilterState } from "./filters";
 import { KpiCards } from "./kpi-cards";
@@ -28,7 +28,8 @@ export function Dashboard({ data }: { data: DashboardData }) {
     [data.prices, filters],
   );
 
-  const series = useMemo(() => weeklySeries(filtered), [filtered]);
+  const series = useMemo(() => weeklySeries(filtered.filter(isIndexPrice)), [filtered]);
+  const promoSeries = useMemo(() => weeklySeries(filtered.filter((p) => !isIndexPrice(p))), [filtered]);
   const kpis = useMemo(() => computeKpis(filtered, data.settings), [filtered, data.settings]);
   const filterKey = `${filters.state}|${filters.city}|${filters.market}|${filters.brand}`;
   const filterLabel = [filters.brand, filters.market, filters.city || filters.state].filter(Boolean).join(" · ");
@@ -80,13 +81,15 @@ export function Dashboard({ data }: { data: DashboardData }) {
           <>
             <KpiCards kpis={kpis} />
             <WageThermometer kpis={kpis} settings={data.settings} />
-            <PriceChart series={series} />
+            <PriceChart series={series} promoSeries={promoSeries} />
           </>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center text-muted">
             {data.prices.length === 0
               ? "Ainda não há preços cadastrados. O primeiro registro aparece aqui assim que for publicado."
-              : "Nenhum registro encontrado para os filtros selecionados."}
+              : filtered.length > 0
+                ? "Neste recorte só há preços promocionais (oferta ou clube), que ficam fora do índice. Veja as fotos abaixo."
+                : "Nenhum registro encontrado para os filtros selecionados."}
           </div>
         )}
 

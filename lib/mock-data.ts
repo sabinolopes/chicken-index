@@ -1,4 +1,4 @@
-import type { ChickenPrice, EconomicSettings, StateType } from "./types";
+import type { ChickenPrice, EconomicSettings, PriceKind, StateType } from "./types";
 
 /**
  * Dados de demonstração: 8 semanas de coletas (set–out/2026) em 4 mercados fictícios,
@@ -68,12 +68,15 @@ function fakeSha256(rand: () => number) {
   return hex;
 }
 
-function demoLabelUrl(p: Pick<ChickenPrice, "id" | "brand" | "price_per_kg" | "market_name" | "state_type" | "recorded_at">) {
+function demoLabelUrl(
+  p: Pick<ChickenPrice, "id" | "brand" | "price_per_kg" | "market_name" | "state_type" | "price_kind" | "recorded_at">,
+) {
   const params = new URLSearchParams({
     brand: p.brand,
     price: p.price_per_kg.toFixed(2),
     market: p.market_name,
     type: p.state_type,
+    kind: p.price_kind,
     date: p.recorded_at,
     seed: p.id.slice(-4),
   });
@@ -82,6 +85,8 @@ function demoLabelUrl(p: Pick<ChickenPrice, "id" | "brand" | "price_per_kg" | "m
 
 function buildMockPrices(): ChickenPrice[] {
   const rand = mulberry32(20260912);
+  // PRNG separado para as promoções: não altera a sequência dos demais campos.
+  const promoRand = mulberry32(4242);
   const rows: ChickenPrice[] = [];
   let n = 0;
 
@@ -95,7 +100,10 @@ function buildMockPrices(): ChickenPrice[] {
         n++;
         const noise = 1 + (rand() - 0.5) * 0.03;
         const frozen = market.stateType === "congelado" ? 0.91 : 1;
-        const price = shelfPrice(BRAND_BASE[brand] * market.regional * frozen * WEEKLY_TREND[week] * noise);
+        const promoRoll = promoRand();
+        const priceKind: PriceKind = promoRoll < 0.12 ? "oferta" : promoRoll < 0.18 ? "clube" : "regular";
+        const discount = priceKind === "oferta" ? 0.82 : priceKind === "clube" ? 0.9 : 1;
+        const price = shelfPrice(BRAND_BASE[brand] * market.regional * frozen * WEEKLY_TREND[week] * noise * discount);
         const recordedAt = addDays(saturday, Math.floor(rand() * 3) - 1); // sex, sáb ou dom
         const hasExif = rand() > 0.15;
         const hour = 9 + Math.floor(rand() * 11);
@@ -109,6 +117,7 @@ function buildMockPrices(): ChickenPrice[] {
           id,
           brand,
           state_type: market.stateType,
+          price_kind: priceKind,
           price_per_kg: price,
           market_name: market.name,
           city: market.city,

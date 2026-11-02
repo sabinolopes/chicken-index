@@ -18,6 +18,8 @@ export interface Kpis {
   weeks: number;
   records: number;
   audited: number;
+  /** Registros de oferta/clube no recorte, fora do índice. */
+  promoCount: number;
   minWageKg: { start: number; now: number; deltaPct: number };
   avgWageKg: { start: number; now: number; deltaPct: number };
 }
@@ -63,8 +65,16 @@ function kgComparison(wage: number, startPrice: number, nowPrice: number) {
   return { start, now, deltaPct: ((now - start) / start) * 100 };
 }
 
+/** Preços que entram no índice: só o preço normal de gôndola (ofertas e clube ficam de fora). */
+export const isIndexPrice = (p: ChickenPrice) => p.price_kind === "regular";
+
+/**
+ * KPIs do índice. As médias usam só preços normais; as contagens de registros e
+ * fotos auditadas consideram todos os registros do recorte.
+ */
 export function computeKpis(prices: ChickenPrice[], settings: EconomicSettings): Kpis | null {
-  const series = weeklySeries(prices);
+  const indexPrices = prices.filter(isIndexPrice);
+  const series = weeklySeries(indexPrices);
   if (series.length === 0) return null;
 
   const first = series[0];
@@ -82,6 +92,7 @@ export function computeKpis(prices: ChickenPrice[], settings: EconomicSettings):
     weeks: series.length,
     records: prices.length,
     audited: prices.filter((p) => p.has_valid_exif).length,
+    promoCount: prices.length - indexPrices.length,
     minWageKg: kgComparison(settings.min_wage, first.average, current.average),
     avgWageKg: kgComparison(settings.avg_wage, first.average, current.average),
   };

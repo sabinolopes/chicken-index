@@ -21,6 +21,13 @@ export function GET(request: NextRequest) {
   const price = Number(q.get("price") ?? "0");
   const market = (q.get("market") ?? "Mercado").slice(0, 40);
   const type = q.get("type") === "congelado" ? "CONGELADO" : "RESFRIADO";
+  const kind = q.get("kind");
+  const promoBadge =
+    kind === "oferta"
+      ? `<g transform="translate(905 375) rotate(12)"><circle r="92" fill="#d7262e" stroke="#fff" stroke-width="6"/><text y="-8" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="38" font-weight="900" fill="#fff">OFERTA</text><text y="32" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#ffe14d">IMPERDÍVEL</text></g>`
+      : kind === "clube"
+        ? `<g transform="translate(600 330)"><rect x="-410" y="-26" width="820" height="52" rx="8" fill="#1d4ed8"/><text y="10" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#fff">PREÇO CLUBE · EXCLUSIVO PARA CADASTRADOS</text></g>`
+        : "";
   const date = (q.get("date") ?? "").slice(0, 10);
   const seed = hash(q.get("seed") ?? brand + price);
 
@@ -71,6 +78,7 @@ export function GET(request: NextRequest) {
     <g transform="translate(760 560)">${bars}</g>
     <text x="760" y="640" font-family="monospace" font-size="20" fill="#222">789${String(seed).slice(0, 10)}</text>
     <text x="760" y="672" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#333">Vál. ${d}/${m}/${y}</text>
+    ${promoBadge}
   </g>
   <rect x="${glare * 10}" y="0" width="240" height="900" fill="url(#glare)" transform="skewX(-18)"/>
   <rect width="1200" height="900" fill="#000" opacity="0.04"/>

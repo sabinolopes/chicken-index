@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { createPrice, type ActionResult } from "@/app/admin/actions";
 import type { MarketSuggestion } from "@/lib/admin-data";
-import { BRANDS, type StateType } from "@/lib/types";
+import { BRANDS, PRICE_KIND_LABEL, PRICE_KINDS, type PriceKind, type StateType } from "@/lib/types";
 import { UFS, parsePrice, todayInBrazil } from "@/lib/validation";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { localIsoDate, processPhoto, type ProcessStep, type ProcessedPhoto } from "@/lib/upload/process-photo";
@@ -50,6 +50,7 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
   const [price, setPrice] = useState("");
   const [brand, setBrand] = useState("");
   const [stateType, setStateType] = useState<StateType>("resfriado");
+  const [priceKind, setPriceKind] = useState<PriceKind>("regular");
   const [market, setMarket] = useState("");
   const [city, setCity] = useState("");
   const [uf, setUf] = useState("");
@@ -130,6 +131,7 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
     setPhoto(null);
     setPrice("");
     setBrand("");
+    setPriceKind("regular");
     setResult(null);
     setRecordedAt("");
   }
@@ -151,7 +153,7 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
             <span className="text-base font-medium text-subtle">/kg</span>
           </p>
           <p className="mt-1 text-muted">
-            {r.brand} · {r.state_type} · {r.market_name} · {r.city}/{r.state} · {formatDate(r.recorded_at)}
+            {r.brand} · {r.state_type} · {PRICE_KIND_LABEL[r.price_kind]} · {r.market_name} · {r.city}/{r.state} · {formatDate(r.recorded_at)}
           </p>
           <p className="mt-2 break-all font-mono text-[11px] text-subtle">SHA-256 {r.original_sha256}</p>
         </div>
@@ -297,6 +299,34 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
           {parsedPrice > 0 && (parsedPrice < 8 || parsedPrice > 60) && (
             <p className="mt-1 text-sm text-amber-800">{formatBRL(parsedPrice)}/kg parece fora do normal. Confira se é o preço do kg.</p>
           )}
+        </div>
+
+        <div>
+          <span className={labelClass}>Este preço é</span>
+          <input type="hidden" name="price_kind" value={priceKind} />
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tipo de preço">
+            {PRICE_KINDS.map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={priceKind === k}
+                onClick={() => setPriceKind(k)}
+                className={`rounded-lg border px-2 py-3 text-sm font-medium leading-tight ${
+                  priceKind === k ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
+                }`}
+              >
+                {k === "clube" ? "Clube" : k === "regular" ? "Normal" : PRICE_KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-subtle">
+            {priceKind === "regular"
+              ? "Preço de gôndola para qualquer cliente. Só esse entra no índice de inflação."
+              : priceKind === "oferta"
+                ? "Promoção temporária. Aparece no site, mas fica fora do índice."
+                : "Preço exclusivo para quem tem cadastro/app do mercado. Aparece no site, mas fica fora do índice."}
+          </p>
         </div>
 
         <div>

@@ -25,8 +25,9 @@ export const BRAND_COLORS: Record<string, string> = {
 };
 
 const AVG_KEY = "Média geral";
+const PROMO_KEY = "Promoções (média)";
 
-export function PriceChart({ series }: { series: WeeklyPoint[] }) {
+export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; promoSeries: WeeklyPoint[] }) {
   const [view, setView] = useState<"chart" | "table">("chart");
 
   const brands = useMemo(
@@ -34,16 +35,36 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
     [series],
   );
 
-  const rows = useMemo(
-    () =>
-      series.map((p) => ({
-        week: p.week,
-        label: formatShortDate(p.week),
-        [AVG_KEY]: p.average,
-        ...p.byBrand,
-      })),
-    [series],
-  );
+  const hasPromo = promoSeries.length > 0;
+  const promoByWeek = useMemo(() => new Map(promoSeries.map((p) => [p.week, p])), [promoSeries]);
+
+  // Semanas com só promoção também viram linha (sem média geral nelas).
+  const rows = useMemo(() => {
+    const weeks = [...new Set([...series.map((p) => p.week), ...promoSeries.map((p) => p.week)])].sort();
+    const byWeek = new Map(series.map((p) => [p.week, p]));
+    return weeks.map((week) => {
+      const regular = byWeek.get(week);
+      return {
+        week,
+        label: formatShortDate(week),
+        [AVG_KEY]: regular?.average,
+        [PROMO_KEY]: promoByWeek.get(week)?.average,
+        ...regular?.byBrand,
+      };
+    });
+  }, [series, promoSeries, promoByWeek]);
+
+  // Eixo Y com passo inteiro e uniforme (o automático do Recharts pula valores).
+  const yAxis = useMemo(() => {
+    const values = rows.flatMap((r) => Object.values(r).filter((v): v is number => typeof v === "number"));
+    if (values.length === 0) return { domain: [0, 1] as [number, number], ticks: [0, 1] };
+    const step = Math.max(...values) - Math.min(...values) > 6 ? 2 : 1;
+    const lo = Math.floor((Math.min(...values) - 0.5) / step) * step;
+    const hi = Math.ceil((Math.max(...values) + 0.5) / step) * step;
+    const ticks: number[] = [];
+    for (let t = lo; t <= hi; t += step) ticks.push(t);
+    return { domain: [lo, hi] as [number, number], ticks };
+  }, [rows]);
 
   return (
     <section aria-labelledby="chart-title" className="rounded-xl border border-border bg-surface p-4 sm:p-6">
@@ -52,7 +73,10 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
           <h2 id="chart-title" className="text-lg font-semibold">
             Evolução semanal do preço por kg
           </h2>
-          <p className="mt-1 text-sm text-muted">Média de todas as etiquetas da semana e média por marca.</p>
+          <p className="mt-1 text-sm text-muted">
+            Média semanal do preço normal de gôndola, geral e por marca.
+            {hasPromo && " Ofertas e preços de clube ficam fora do índice, na linha tracejada."}
+          </p>
         </div>
         <div className="inline-flex rounded-lg border border-border p-0.5 text-sm" role="group" aria-label="Visualização">
           <ToggleButton active={view === "chart"} onClick={() => setView("chart")}>
@@ -69,6 +93,7 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
         {brands.map((b) => (
           <LegendItem key={b} color={BRAND_COLORS[b]} label={b} />
         ))}
+        {hasPromo && <LegendItem color="var(--series-promo)" label={PROMO_KEY} dashed />}
       </ul>
 
       {view === "chart" ? (
@@ -83,8 +108,9 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
                 axisLine={{ stroke: "var(--border)" }}
               />
               <YAxis
-                domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]}
-                allowDecimals={false}
+                domain={yAxis.domain}
+                ticks={yAxis.ticks}
+                interval={0}
                 tickFormatter={(v: number) => `R$ ${v}`}
                 tick={{ fill: "var(--subtle)", fontSize: 12 }}
                 tickLine={false}
@@ -104,6 +130,18 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
                   connectNulls
                 />
               ))}
+              {hasPromo && (
+                <Line
+                  type="monotone"
+                  dataKey={PROMO_KEY}
+                  stroke="var(--series-promo)"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  dot={{ r: 3, fill: "var(--series-promo)", stroke: "var(--surface)", strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, stroke: "var(--surface)", strokeWidth: 2 }}
+                  connectNulls
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey={AVG_KEY}
@@ -127,22 +165,30 @@ export function PriceChart({ series }: { series: WeeklyPoint[] }) {
                     {b}
                   </th>
                 ))}
+                {hasPromo && <th className="py-2 pr-4 font-medium text-right">Promoções</th>}
                 <th className="py-2 font-medium text-right">Etiquetas</th>
               </tr>
             </thead>
             <tbody>
-              {series.map((p) => (
-                <tr key={p.week} className="border-b border-border/60">
-                  <td className="py-2 pr-4">{formatShortDate(p.week)}</td>
-                  <td className="py-2 pr-4 text-right font-semibold">{formatBRL(p.average)}</td>
-                  {brands.map((b) => (
-                    <td key={b} className="py-2 pr-4 text-right">
-                      {p.byBrand[b] !== undefined ? formatBRL(p.byBrand[b]) : "—"}
-                    </td>
-                  ))}
-                  <td className="py-2 text-right text-muted">{p.count}</td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const regular = series.find((p) => p.week === row.week);
+                const promo = promoByWeek.get(row.week);
+                return (
+                  <tr key={row.week} className="border-b border-border/60">
+                    <td className="py-2 pr-4">{row.label}</td>
+                    <td className="py-2 pr-4 text-right font-semibold">{regular ? formatBRL(regular.average) : "—"}</td>
+                    {brands.map((b) => (
+                      <td key={b} className="py-2 pr-4 text-right">
+                        {regular?.byBrand[b] !== undefined ? formatBRL(regular.byBrand[b]) : "—"}
+                      </td>
+                    ))}
+                    {hasPromo && (
+                      <td className="py-2 pr-4 text-right">{promo ? `${formatBRL(promo.average)} (${promo.count})` : "—"}</td>
+                    )}
+                    <td className="py-2 text-right text-muted">{(regular?.count ?? 0) + (promo?.count ?? 0)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -158,7 +204,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
     <div className="rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-lg">
       <p className="mb-1 font-medium">Semana de {label}</p>
       <ul className="space-y-0.5">
-        {sorted.map((item) => (
+        {sorted.filter((item) => item.value !== undefined && item.value !== null).map((item) => (
           <li key={String(item.dataKey)} className="flex items-center gap-2">
             <span className="inline-block size-2.5 rounded-full" style={{ background: item.color }} aria-hidden />
             <span className="text-muted">{item.name}</span>
@@ -172,10 +218,14 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   );
 }
 
-function LegendItem({ color, label, thick = false }: { color: string; label: string; thick?: boolean }) {
+function LegendItem({ color, label, thick = false, dashed = false }: { color: string; label: string; thick?: boolean; dashed?: boolean }) {
   return (
     <li className="flex items-center gap-1.5">
-      <span className={`inline-block w-4 rounded-full ${thick ? "h-[3px]" : "h-0.5"}`} style={{ background: color }} aria-hidden />
+      <span
+        className={`inline-block w-4 ${thick ? "h-[3px]" : "h-0.5"} ${dashed ? "" : "rounded-full"}`}
+        style={dashed ? { backgroundImage: `linear-gradient(to right, ${color} 60%, transparent 60%)`, backgroundSize: "6px 100%" } : { background: color }}
+        aria-hidden
+      />
       <span className={thick ? "font-medium text-foreground" : ""}>{label}</span>
     </li>
   );

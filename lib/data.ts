@@ -7,7 +7,7 @@ import type { ChickenPrice, DashboardData, EconomicSettings } from "./types";
 export const PRICES_CACHE_TAG = "chicken-prices";
 
 const PRICE_COLUMNS =
-  "id, brand, state_type, price_per_kg, market_name, city, state, recorded_at, photo_url, original_sha256, exif_device, exif_datetime, has_valid_exif, created_at";
+  "id, brand, state_type, price_kind, price_per_kg, market_name, city, state, recorded_at, photo_url, original_sha256, exif_device, exif_datetime, has_valid_exif, created_at";
 
 /**
  * Dados do dashboard público. Cacheado por 1 hora (equivalente ao antigo

@@ -15,6 +15,9 @@ create table if not exists public.chicken_prices (
   state_type      text not null default 'resfriado'
                     check (state_type in ('resfriado', 'congelado')),
   price_per_kg    numeric(10,2) not null check (price_per_kg > 0 and price_per_kg < 1000),
+  -- regular = preço normal; oferta = promoção; clube = clube de descontos. O índice usa só regular.
+  price_kind      text not null default 'regular'
+                    check (price_kind in ('regular', 'oferta', 'clube')),
   market_name     text not null check (char_length(trim(market_name)) > 0),
   city            text not null check (char_length(trim(city)) > 0),
   state           varchar(2) not null check (state ~ '^[A-Z]{2}$'),
@@ -28,6 +31,12 @@ create table if not exists public.chicken_prices (
 );
 
 -- Antifraude: a mesma foto original não pode ser cadastrada duas vezes.
+-- Bancos criados antes da coluna price_kind:
+alter table public.chicken_prices add column if not exists price_kind text not null default 'regular';
+alter table public.chicken_prices drop constraint if exists chicken_prices_price_kind_check;
+alter table public.chicken_prices add constraint chicken_prices_price_kind_check
+  check (price_kind in ('regular', 'oferta', 'clube'));
+
 create unique index if not exists chicken_prices_original_sha256_key
   on public.chicken_prices (original_sha256);
 
