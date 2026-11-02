@@ -1,8 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { MOCK_PRICES, MOCK_SETTINGS } from "./mock-data";
-import { isSupabaseConfigured } from "./supabase/config";
 import { createPublicClient } from "./supabase/public-client";
-import type { ChickenPrice, DashboardData, EconomicSettings } from "./types";
+import { DEFAULT_SETTINGS, type ChickenPrice, type DashboardData, type EconomicSettings } from "./types";
 
 export const PRICES_CACHE_TAG = "chicken-prices";
 
@@ -21,10 +19,6 @@ export async function getDashboardData(): Promise<DashboardData> {
   cacheTag(PRICES_CACHE_TAG);
 
   const generatedAt = new Date().toISOString();
-
-  if (!isSupabaseConfigured()) {
-    return { mode: "demo", prices: MOCK_PRICES, settings: MOCK_SETTINGS, generatedAt };
-  }
 
   const supabase = createPublicClient();
   const [pricesRes, settingsRes] = await Promise.all([
@@ -50,7 +44,7 @@ export async function getDashboardData(): Promise<DashboardData> {
         avg_wage: Number(settingsRes.data.avg_wage),
         updated_at: settingsRes.data.updated_at,
       }
-    : MOCK_SETTINGS;
+    : DEFAULT_SETTINGS;
 
-  return { mode: "live", prices, settings, generatedAt };
+  return { prices, settings, generatedAt };
 }

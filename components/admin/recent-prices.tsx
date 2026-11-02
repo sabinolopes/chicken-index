@@ -6,7 +6,7 @@ import { deletePrice } from "@/app/admin/actions";
 import { PRICE_KIND_LABEL, type ChickenPrice } from "@/lib/types";
 import { formatBRL, formatDate } from "@/lib/format";
 
-export function RecentPrices({ prices, total, demo }: { prices: ChickenPrice[]; total: number; demo: boolean }) {
+export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total: number }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -70,9 +70,9 @@ export function RecentPrices({ prices, total, demo }: { prices: ChickenPrice[]; 
               <button
                 type="button"
                 onClick={() => remove(p)}
-                disabled={demo || pendingId !== null}
+                disabled={pendingId !== null}
                 aria-label={`Excluir registro de ${p.market_name}`}
-                title={demo ? "Desativado no Modo Demo" : "Excluir"}
+                title="Excluir"
                 className="rounded-lg p-2 text-subtle hover:bg-red-50 hover:text-red-700 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 {pendingId === p.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}

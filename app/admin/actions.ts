@@ -1,14 +1,16 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isAdminUser, requireAdmin } from "@/lib/auth";
 import { PRICES_CACHE_TAG } from "@/lib/data";
-import { isSupabaseConfigured, PHOTO_BUCKET } from "@/lib/supabase/config";
+import { PHOTO_BUCKET } from "@/lib/supabase/config";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MAX_PHOTO_BYTES, parsePrice, parsePriceForm, PHOTO_MIME_TYPES, type PriceInput } from "@/lib/validation";
 
-export type ActionResult = { ok: true; message: string; demo?: boolean; record?: PriceInput } | { ok: false; error: string };
+export type ActionResult = { ok: true; message: string; record?: PriceInput } | { ok: false; error: string };
 
 /** Invalida o cache da home (ISR) logo após uma alteração do admin. */
 function refreshPublicPages() {
@@ -21,8 +23,6 @@ function refreshPublicPages() {
 // ---------------------------------------------------------------------------
 
 export async function signIn(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  if (!isSupabaseConfigured()) redirect("/admin");
-
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   if (!email || !password) return { ok: false, error: "Informe e-mail e senha." };
@@ -39,10 +39,8 @@ export async function signIn(_prev: ActionResult | null, form: FormData): Promis
 }
 
 export async function signOut() {
-  if (isSupabaseConfigured()) {
-    const supabase = await createServerSupabase();
-    await supabase.auth.signOut();
-  }
+  const supabase = await createServerSupabase();
+  await supabase.auth.signOut();
   redirect("/admin/login");
 }
 
@@ -51,7 +49,7 @@ export async function signOut() {
 // ---------------------------------------------------------------------------
 
 export async function createPrice(form: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const parsed = parsePriceForm(form);
   if ("error" in parsed) return { ok: false, error: parsed.error };
@@ -61,15 +59,6 @@ export async function createPrice(form: FormData): Promise<ActionResult> {
   if (!(photo instanceof File) || photo.size === 0) return { ok: false, error: "Foto comprimida ausente." };
   if (!PHOTO_MIME_TYPES.includes(photo.type)) return { ok: false, error: "A foto deve estar em .webp ou .jpg." };
   if (photo.size > MAX_PHOTO_BYTES) return { ok: false, error: "Foto comprimida maior que 1 MB." };
-
-  if (admin.demo) {
-    return {
-      ok: true,
-      demo: true,
-      record: input,
-      message: "Modo Demo: tudo validado, mas nada foi salvo (configure o Supabase para gravar de verdade).",
-    };
-  }
 
   const supabase = await createServerSupabase();
 
@@ -111,8 +100,7 @@ export async function createPrice(form: FormData): Promise<ActionResult> {
 // ---------------------------------------------------------------------------
 
 export async function deletePrice(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (admin.demo) return { ok: false, error: "Exclusão desativada no Modo Demo." };
+  await requireAdmin();
 
   const supabase = await createServerSupabase();
   const { data: row, error } = await supabase.from("chicken_prices").select("photo_url").eq("id", id).maybeSingle();
@@ -130,12 +118,11 @@ export async function deletePrice(id: string): Promise<ActionResult> {
 }
 
 export async function updateSettings(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const minWage = parsePrice(String(form.get("min_wage") ?? ""));
   const avgWage = parsePrice(String(form.get("avg_wage") ?? ""));
   if (!(minWage > 0) || !(avgWage > 0)) return { ok: false, error: "Informe salários válidos." };
-  if (admin.demo) return { ok: false, error: "Edição desativada no Modo Demo." };
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
@@ -148,4 +135,64 @@ export async function updateSettings(_prev: ActionResult | null, form: FormData)
 
   refreshPublicPages();
   return { ok: true, message: "Salários atualizados." };
+}
+
+// ---------------------------------------------------------------------------
+// Admins: convite por e-mail e remoção
+// ---------------------------------------------------------------------------
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function inviteAdmin(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return { ok: false, error: "Informe um e-mail válido." };
+
+  const h = await headers();
+  const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const supabase = createAdminSupabase();
+
+  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${origin}/auth/definir-senha`,
+  });
+
+  let userId = data?.user?.id;
+  let message = `Convite enviado para ${email}. O link vale por 24 horas.`;
+
+  if (error) {
+    if (error.code !== "email_exists") return { ok: false, error: `Falha ao convidar: ${error.message}` };
+    // Já tem conta (ex.: convidado antes): só promove a admin.
+    const { data: list, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    if (listError) return { ok: false, error: `Falha ao buscar o usuário: ${listError.message}` };
+    const existing = list.users.find((u) => u.email?.toLowerCase() === email);
+    if (!existing) return { ok: false, error: "Usuário existente não encontrado." };
+    if (isAdminUser(existing)) return { ok: false, error: `${email} já é admin.` };
+    userId = existing.id;
+    message = `${email} já tinha conta e agora é admin. Peça para entrar em /admin/login.`;
+  }
+
+  const { error: roleError } = await supabase.auth.admin.updateUserById(userId!, { app_metadata: { role: "admin" } });
+  if (roleError) return { ok: false, error: `Convite enviado, mas falhou ao marcar como admin: ${roleError.message}` };
+
+  revalidatePath("/admin/usuarios");
+  return { ok: true, message };
+}
+
+export async function removeAdmin(userId: string): Promise<ActionResult> {
+  const me = await requireAdmin();
+  if (userId === me.id) return { ok: false, error: "Você não pode remover a si mesmo." };
+
+  const supabase = createAdminSupabase();
+  const { data: list, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  if (listError) return { ok: false, error: listError.message };
+  if (list.users.filter(isAdminUser).length <= 1) return { ok: false, error: "É preciso manter pelo menos um admin." };
+
+  // Apaga a conta: cancela convite pendente e impede novos logins. Uma sessão já
+  // aberta ainda vale até o token expirar (até 1 hora).
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) return { ok: false, error: `Falha ao remover: ${error.message}` };
+
+  revalidatePath("/admin/usuarios");
+  return { ok: true, message: "Acesso removido." };
 }

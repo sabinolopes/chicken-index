@@ -40,7 +40,7 @@ function readLastPlace(): MarketSuggestion | null {
   }
 }
 
-export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggestion[]; demo: boolean }) {
+export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] }) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
@@ -142,9 +142,9 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
     const r = result.record;
     return (
       <div className="space-y-4">
-        <div className={`rounded-xl border p-4 ${result.demo ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="flex items-start gap-2 font-medium">
-            <CheckCircle2 className={`mt-0.5 size-5 shrink-0 ${result.demo ? "text-amber-700" : "text-emerald-700"}`} aria-hidden />
+            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-700" aria-hidden />
             {result.message}
           </p>
         </div>
@@ -456,7 +456,7 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
       <div className="fixed inset-x-0 bottom-0 border-t border-border bg-surface/95 p-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
         <button type="submit" disabled={!canSubmit} className={primaryButtonClass}>
           {pending ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <Send className="size-5" aria-hidden />}
-          {pending ? "Enviando…" : demo ? "Validar envio (demo)" : "Publicar preço"}
+          {pending ? "Enviando…" : "Publicar preço"}
         </button>
       </div>
     </form>

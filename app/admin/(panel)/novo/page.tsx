@@ -18,9 +18,9 @@ export default function NewPricePage() {
 }
 
 async function NewPriceLoader() {
-  const admin = await requireAdmin();
+  await requireAdmin();
   const { suggestions } = await getAdminData(1);
-  return <NewPriceForm suggestions={suggestions} demo={admin.demo} />;
+  return <NewPriceForm suggestions={suggestions} />;
 }
 
 function FormSkeleton() {

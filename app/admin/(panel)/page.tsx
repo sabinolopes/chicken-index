@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Camera, FlaskConical } from "lucide-react";
+import { Camera } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminData } from "@/lib/admin-data";
 import { RecentPrices } from "@/components/admin/recent-prices";
@@ -25,22 +25,13 @@ export default function AdminHomePage() {
 }
 
 async function AdminHome() {
-  const admin = await requireAdmin();
+  await requireAdmin();
   const { prices, total, settings } = await getAdminData(30);
 
   return (
     <>
-      {admin.demo && (
-        <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-          <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            <strong>Modo Demo:</strong> o fluxo de upload funciona por completo (hash, EXIF, compressão e validação), mas
-            nada é gravado. Exclusão e edição de salários ficam desativadas.
-          </span>
-        </p>
-      )}
-      <RecentPrices prices={prices} total={total} demo={admin.demo} />
-      <SettingsForm settings={settings} demo={admin.demo} />
+      <RecentPrices prices={prices} total={total} />
+      <SettingsForm settings={settings} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Drumstick, ExternalLink, LogOut } from "lucide-react";
+import { Drumstick, ExternalLink, LogOut, Users } from "lucide-react";
 import { getAdmin } from "@/lib/auth";
 import { signOut } from "../actions";
 
@@ -17,6 +17,10 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             <span>Admin</span>
           </Link>
           <nav className="ml-auto flex items-center gap-1 text-sm">
+            <Link href="/admin/usuarios" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-muted hover:bg-stone-100 hover:text-foreground">
+              <Users className="size-4" aria-hidden />
+              <span className="hidden sm:inline">Admins</span>
+            </Link>
             <Link href="/" className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-muted hover:bg-stone-100 hover:text-foreground">
               Site <ExternalLink className="size-3.5" aria-hidden />
             </Link>
@@ -36,7 +40,7 @@ async function UserMenu() {
   if (!admin) return null;
   return (
     <form action={signOut} className="flex items-center gap-2">
-      <span className="hidden max-w-40 truncate text-subtle sm:inline">{admin.demo ? "Modo Demo" : admin.email}</span>
+      <span className="hidden max-w-40 truncate text-subtle sm:inline">{admin.email}</span>
       <button
         type="submit"
         className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-muted hover:bg-stone-100 hover:text-foreground"

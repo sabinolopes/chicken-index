@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Drumstick, FlaskConical, Share2 } from "lucide-react";
+import { Drumstick, Share2 } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { computeKpis, isIndexPrice, weeklySeries } from "@/lib/stats";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -36,19 +36,6 @@ export function Dashboard({ data }: { data: DashboardData }) {
 
   return (
     <div className="flex-1">
-      {data.mode === "demo" && (
-        <div className="bg-amber-100 text-amber-950 border-b border-amber-200">
-          <div className="mx-auto max-w-6xl px-4 py-2 text-sm flex items-center gap-2">
-            <FlaskConical className="size-4 shrink-0" aria-hidden />
-            <span>
-              <strong>Modo Demo:</strong> dados fictícios de 8 semanas. Preencha{" "}
-              <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_URL</code> no{" "}
-              <code className="font-mono text-xs">.env.local</code> para usar dados reais.
-            </span>
-          </div>
-        </div>
-      )}
-
       <header className="border-b border-border bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

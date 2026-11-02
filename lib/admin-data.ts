@@ -1,7 +1,5 @@
-import { MOCK_PRICES, MOCK_SETTINGS } from "./mock-data";
-import { isSupabaseConfigured } from "./supabase/config";
 import { createServerSupabase } from "./supabase/server";
-import type { ChickenPrice, EconomicSettings } from "./types";
+import { DEFAULT_SETTINGS, type ChickenPrice, type EconomicSettings } from "./types";
 
 export interface MarketSuggestion {
   market_name: string;
@@ -16,15 +14,6 @@ export async function getAdminData(limit = 50): Promise<{
   settings: EconomicSettings;
   suggestions: MarketSuggestion[];
 }> {
-  if (!isSupabaseConfigured()) {
-    return {
-      prices: MOCK_PRICES.slice(0, limit),
-      total: MOCK_PRICES.length,
-      settings: MOCK_SETTINGS,
-      suggestions: uniquePlaces(MOCK_PRICES),
-    };
-  }
-
   const supabase = await createServerSupabase();
   const [recent, places, settings] = await Promise.all([
     supabase
@@ -43,7 +32,7 @@ export async function getAdminData(limit = 50): Promise<{
     total: recent.count ?? 0,
     settings: settings.data
       ? { min_wage: Number(settings.data.min_wage), avg_wage: Number(settings.data.avg_wage), updated_at: settings.data.updated_at }
-      : MOCK_SETTINGS,
+      : DEFAULT_SETTINGS,
     suggestions: uniquePlaces(places.data ?? []),
   };
 }

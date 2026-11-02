@@ -37,11 +37,11 @@ export interface EconomicSettings {
   updated_at: string;
 }
 
-export type DataMode = "demo" | "live";
-
 export interface DashboardData {
-  mode: DataMode;
   prices: ChickenPrice[];
   settings: EconomicSettings;
   generatedAt: string;
 }
+
+/** Valores iniciais (o schema cria a linha id = 1; isto só cobre um banco sem ela). */
+export const DEFAULT_SETTINGS: EconomicSettings = { min_wage: 1518, avg_wage: 3225, updated_at: "1970-01-01T00:00:00Z" };
