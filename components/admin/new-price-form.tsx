@@ -17,8 +17,9 @@ import { createPrice, type ActionResult } from "@/app/admin/actions";
 import type { MarketSuggestion } from "@/lib/admin-data";
 import { BRANDS, PRICE_KIND_LABEL, PRICE_KINDS, type PriceKind, type StateType } from "@/lib/types";
 import { UFS, parsePrice, todayInBrazil } from "@/lib/validation";
-import { formatBRL, formatDate, formatDateTime, maskCents } from "@/lib/format";
+import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { localIsoDate, processPhoto, type ProcessStep, type ProcessedPhoto } from "@/lib/upload/process-photo";
+import { MoneyInput } from "./money-input";
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "./ui";
 
 const LAST_PLACE_KEY = "admin:last-place";
@@ -284,25 +285,7 @@ export function NewPriceForm({ suggestions, demo }: { suggestions: MarketSuggest
           <label htmlFor="price_per_kg" className={labelClass}>
             Preço do <strong>kg</strong> na etiqueta (R$)
           </label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xl font-semibold text-subtle" aria-hidden>
-              R$
-            </span>
-            {/* Máscara de centavos: só dígitos; "2199" vira 21,99 */}
-            <input
-              id="price_per_kg"
-              name="price_per_kg"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*,[0-9]{2}"
-              autoComplete="off"
-              placeholder="0,00"
-              value={price}
-              onChange={(e) => setPrice(maskCents(e.target.value))}
-              required
-              className={`${inputClass} pl-12 text-3xl font-bold tabular py-3`}
-            />
-          </div>
+          <MoneyInput id="price_per_kg" name="price_per_kg" size="lg" required value={price} onValueChange={setPrice} />
           {parsedPrice > 0 && (parsedPrice < 8 || parsedPrice > 60) && (
             <p className="mt-1 text-sm text-amber-800">{formatBRL(parsedPrice)}/kg parece fora do normal. Confira se é o preço do kg.</p>
           )}

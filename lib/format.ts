@@ -31,12 +31,17 @@ export function formatDateTime(iso: string) {
   }).format(new Date(iso));
 }
 
+const cents = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /**
  * Máscara de centavos: só dígitos, preenchidos da direita para a esquerda.
- * "2" → "0,02", "20" → "0,20", "2000" → "20,00". Vazio continua vazio.
+ * "2" → "0,02", "2000" → "20,00", "151800" → "1.518,00". Vazio continua vazio.
  */
 export function maskCents(raw: string, maxDigits = 5) {
   const digits = raw.replace(/\D/g, "").replace(/^0+/, "").slice(0, maxDigits);
   if (!digits) return "";
-  return (Number(digits) / 100).toFixed(2).replace(".", ",");
+  return cents.format(Number(digits) / 100);
 }
+
+/** 1518 → "1.518,00" (valor inicial de um campo com máscara de centavos). */
+export const centsFromNumber = (value: number) => cents.format(value);
