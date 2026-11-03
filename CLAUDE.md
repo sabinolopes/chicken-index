@@ -9,7 +9,7 @@ Sistema web público e auditável para monitoramento semanal do preço do quilo 
 - **Estilização:** Tailwind CSS + Lucide React (ícones)
 - **Gráficos:** Recharts (responsivo)
 - **Backend / DB / Auth:** Supabase (`@supabase/supabase-js` e `@supabase/ssr`)
-- **Armazenamento das fotos:** Cloudflare R2 (API compatível com S3, via `aws4fetch` em `lib/r2.ts`, só no servidor) — 10 GB grátis e sem custo de tráfego de saída, para a galeria aguentar picos de acesso.
+- **Armazenamento das fotos:** Cloudflare R2 (API compatível com S3, via `aws4fetch` em `modules/photos/storage.ts`, só no servidor) — 10 GB grátis e sem custo de tráfego de saída, para a galeria aguentar picos de acesso.
 - **Processamento Client-Side no Upload:**
   - `exifr`: Extração de metadados da câmera no navegador.
   - Web Crypto API nativa (`crypto.subtle.digest`): Geração de hash SHA-256 do arquivo bruto original.
@@ -18,7 +18,7 @@ Sistema web público e auditável para monitoramento semanal do preço do quilo 
 ## 2. Regras Críticas de Escalabilidade (Proteção contra Tráfego Viral)
 1. **Cache Estático na Home (ISR / On-Demand Revalidation):**
    - A página pública (`app/page.tsx`) NÃO deve fazer queries dinâmicas a cada acesso de visitante.
-   - Cache de 1 hora: o projeto usa `cacheComponents` (Next 16), então é `'use cache'` + `cacheLife` + `cacheTag` em `lib/data.ts` — `export const revalidate` é incompatível e quebra o build. As Server Actions do admin chamam `updateTag` e `revalidatePath('/')` ao cadastrar, excluir ou alterar salários.
+   - Cache de 1 hora: o projeto usa `cacheComponents` (Next 16), então é `'use cache'` + `cacheLife` + `cacheTag` em `modules/dashboard/queries.ts` — `export const revalidate` é incompatível e quebra o build. As Server Actions do admin chamam `refreshDashboard()` (`modules/dashboard/cache.ts`: `updateTag` + `revalidatePath('/')`) ao cadastrar, excluir ou alterar salários.
 2. **Bypass do Limite de Imagens da Vercel:**
    - Como as imagens já são convertidas para `.webp` leve no momento do upload pelo celular e servidas direto da URL pública do R2, use `<Image unoptimized />` do Next.js ou `<img>` com `loading="lazy"` e `decoding="async"`. Isso evita estourar a cota de 1.000 otimizações/mês do plano gratuito da Vercel em caso de viralização.
 3. **Paginação na Galeria:**
@@ -84,8 +84,8 @@ Toda entrega tem duas etapas: **(1) faça funcionar, com testes reais e seguran�
 ### Regras de convenção (revisão humana)
 - **Comentários em pt-BR**, explicando o porquê, não o quê.
 - **Operadores nullish:** `?.` e `??` quando `0`, `false` ou `""` são valores válidos; `||` quando qualquer valor falsy deve cair no padrão.
-- **Interface não busca dados:** componentes não chamam Supabase nem `fetch`. Leitura em `lib/data.ts` / `lib/admin-data.ts`, escrita em Server Actions (`app/admin/actions.ts`), infraestrutura em `lib/supabase/*` e `lib/r2.ts`.
-- **Validação sempre no servidor** (`lib/validation.ts`), mesmo que o cliente já valide. Nunca confie em ID ou role vindos do cliente: a role de admin vem do `app_metadata` (definido só pelo servidor) e as escritas passam por `requireAdmin()` + RLS.
+- **Interface não busca dados:** componentes não chamam Supabase nem `fetch`; usam `queries.ts` (leitura) e `actions.ts` (escrita) do módulo do domínio (ver seção 7).
+- **Validação sempre no servidor** (`modules/prices/validation.ts`), mesmo que o cliente já valide. Nunca confie em ID ou role vindos do cliente: a role de admin vem do `app_metadata` (definido só pelo servidor) e as escritas passam por `requireAdmin()` + RLS.
 - **Falhe de forma segura:** erro de configuração ou de integração bloqueia o fluxo com mensagem clara; nunca há modo mock/demo nem fallback que finja sucesso.
 - **Nada sensível em logs ou respostas:** sem chaves, tokens ou dados pessoais em mensagens de erro.
 
@@ -93,3 +93,24 @@ Toda entrega tem duas etapas: **(1) faça funcionar, com testes reais e seguran�
 - **Zero testes falsos:** todo teste exercita regra de negócio real com asserções significativas (nada de `expect(true).toBe(true)` ou teste que só instancia).
 - **Bug corrigido = teste que reproduz o bug primeiro**, depois a correção.
 - Antes de concluir, rode `npm run check` (tipos + lint sem avisos + testes). O hook de pré-commit (`.husky/pre-commit`) roda o mesmo e bloqueia o commit se algo falhar.
+
+## 7. Organização por Domínio (`modules/`)
+
+O código de negócio fica em `modules/<domínio>/`, cada um com os mesmos papéis de arquivo. Inspirado no padrão de módulos do Gotenks (rotas finas + camada de serviço + camada de dados):
+
+| Arquivo | Papel | Regra |
+|---|---|---|
+| `types.ts` | Tipos e constantes do domínio | Sem dependência de infraestrutura |
+| `validation.ts` | Leitura e validação da entrada (FormData) | Função pura, testada |
+| `repository.ts` | Acesso ao banco (Supabase) atrás de uma interface | Só traduz dados e lança `Error`; nada de regra de negócio |
+| `service.ts` | Regras de negócio | Recebe repositórios/armazenamentos por parâmetro (objeto desestruturado), devolve `ActionResult`; testado com implementações em memória |
+| `queries.ts` | Leituras para as páginas | Sem regras; monta o cliente certo (público com cache ou sessão do admin) |
+| `actions.ts` | Server Actions (`"use server"`) | Camada fina: `requireAdmin()` → validação → serviço → invalidação de cache. Sem regra de negócio |
+
+Domínios: `auth` (sessão e role), `prices` (cadastro e exclusão), `settings` (salários), `admins` (convite e remoção), `photos` (chaves, R2 e pipeline do navegador), `dashboard` (consulta pública com cache, invalidação e estatísticas).
+
+- **Dependências apontam para dentro:** `actions` → `service` → interfaces (`PricesRepository`, `PhotoStorage`, `AdminDirectory`). O serviço importa só tipos dessas interfaces; a implementação real é escolhida na action.
+- **`lib/`** guarda apenas o que é genérico e sem domínio: `format.ts`, `parse.ts`, `action-result.ts` e os clientes em `lib/supabase/`.
+- **`components/`** só renderiza: recebe dados por props e chama as `actions` do módulo.
+- **Novo domínio ou nova regra:** crie o `service.ts` com teste antes de ligar a action; se a função de serviço precisar de mais de 3 dependências, receba um objeto.
+

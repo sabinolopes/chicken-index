@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { MapPin, RotateCcw, Store, Tag } from "lucide-react";
-import type { ChickenPrice } from "@/lib/types";
+import type { ChickenPrice } from "@/modules/prices/types";
 
 export interface FilterState {
   state: string;

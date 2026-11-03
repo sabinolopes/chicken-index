@@ -1,4 +1,5 @@
-import type { ChickenPrice, EconomicSettings } from "./types";
+import type { ChickenPrice } from "@/modules/prices/types";
+import type { EconomicSettings } from "@/modules/settings/types";
 
 export interface WeeklyPoint {
   week: string; // segunda-feira da semana (YYYY-MM-DD)

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Download, X } from "lucide-react";
-import type { Kpis } from "@/lib/stats";
-import type { EconomicSettings } from "@/lib/types";
+import type { Kpis } from "@/modules/dashboard/stats";
+import type { EconomicSettings } from "@/modules/settings/types";
 import { formatBRL, formatKg, formatPct, formatShortDate } from "@/lib/format";
 
 const CARD_WIDTH = 1080;

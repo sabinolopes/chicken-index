@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Camera } from "lucide-react";
-import { requireAdmin } from "@/lib/auth";
-import { getAdminData } from "@/lib/admin-data";
+import { requireAdmin } from "@/modules/auth/session";
+import { listRecentPrices } from "@/modules/prices/queries";
+import { getSettings } from "@/modules/settings/queries";
 import { RecentPrices } from "@/components/admin/recent-prices";
 import { SettingsForm } from "@/components/admin/settings-form";
 
@@ -26,7 +27,7 @@ export default function AdminHomePage() {
 
 async function AdminHome() {
   await requireAdmin();
-  const { prices, total, settings } = await getAdminData(30);
+  const [{ prices, total }, settings] = await Promise.all([listRecentPrices(30), getSettings()]);
 
   return (
     <>

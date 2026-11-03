@@ -1,6 +1,13 @@
 import "server-only";
 import { AwsClient } from "aws4fetch";
 
+/** O que o cadastro de preços precisa de um armazenamento de fotos (o R2 em produção). */
+export interface PhotoStorage {
+  /** Grava a foto e devolve a URL pública que vai para `photo_url`. */
+  upload(key: string, photo: File): Promise<string>;
+  remove(key: string): Promise<void>;
+}
+
 /**
  * Fotos das etiquetas no Cloudflare R2 (API compatível com S3, tráfego de saída
  * gratuito). Só no servidor, e só depois de `requireAdmin()`: as chaves dão escrita
@@ -46,8 +53,4 @@ export async function deletePhoto(key: string): Promise<void> {
   if (!response.ok && response.status !== 404) throw new Error(`R2 respondeu ${response.status}`);
 }
 
-/** Chave do objeto a partir da URL salva (`AAAA-MM/<sha256>.webp`); null se for de outro lugar. */
-export function photoKeyFromUrl(url: string): string | null {
-  const match = url.match(/\/(\d{4}-\d{2}\/[0-9a-f]{64}\.(?:webp|jpg))$/);
-  return match ? match[1] : null;
-}
+export const r2PhotoStorage: PhotoStorage = { upload: uploadPhoto, remove: deletePhoto };

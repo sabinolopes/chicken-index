@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { BadgeCheck, Camera, ChevronDown, MapPin, Tag, TriangleAlert } from "lucide-react";
-import { PRICE_KIND_LABEL, type ChickenPrice, type PriceKind } from "@/lib/types";
+import { PRICE_KIND_LABEL, type ChickenPrice, type PriceKind } from "@/modules/prices/types";
 import { formatBRL, formatDate } from "@/lib/format";
 import { PhotoModal } from "./photo-modal";
 

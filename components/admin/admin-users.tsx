@@ -2,8 +2,8 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { CheckCircle2, Clock, Loader2, Mail, Send, Trash2, TriangleAlert } from "lucide-react";
-import { inviteAdmin, removeAdmin } from "@/app/admin/actions";
-import type { AdminListItem } from "@/lib/admin-users";
+import { inviteAdmin, removeAdmin } from "@/modules/admins/actions";
+import type { AdminListItem } from "@/modules/admins/service";
 import { formatDateTime } from "@/lib/format";
 import { inputClass, labelClass, secondaryButtonClass } from "./ui";
 

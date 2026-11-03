@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Drumstick, Share2 } from "lucide-react";
-import type { DashboardData } from "@/lib/types";
-import { computeKpis, isIndexPrice, weeklySeries } from "@/lib/stats";
+import type { DashboardData } from "@/modules/dashboard/types";
+import { computeKpis, isIndexPrice, weeklySeries } from "@/modules/dashboard/stats";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { EMPTY_FILTERS, Filters, type FilterState } from "./filters";
 import { KpiCards } from "./kpi-cards";

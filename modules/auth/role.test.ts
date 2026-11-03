@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdminUser } from "@/lib/admin-role";
+import { isAdminUser } from "@/modules/auth/role";
 
 describe("isAdminUser", () => {
   it("só libera quem tem role admin no app_metadata (definido pelo servidor, não pelo usuário)", () => {

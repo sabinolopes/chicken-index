@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
-import { getAdminData } from "@/lib/admin-data";
+import { requireAdmin } from "@/modules/auth/session";
+import { listMarketSuggestions } from "@/modules/prices/queries";
 import { NewPriceForm } from "@/components/admin/new-price-form";
 
 export default function NewPricePage() {
@@ -19,7 +19,7 @@ export default function NewPricePage() {
 
 async function NewPriceLoader() {
   await requireAdmin();
-  const { suggestions } = await getAdminData(1);
+  const suggestions = await listMarketSuggestions();
   return <NewPriceForm suggestions={suggestions} />;
 }
 

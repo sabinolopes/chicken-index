@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { requireAdmin } from "@/lib/auth";
-import { listAdmins } from "@/lib/admin-users";
+import { requireAdmin } from "@/modules/auth/session";
+import { listAdmins } from "@/modules/admins/queries";
 import { AdminList, InviteAdminForm } from "@/components/admin/admin-users";
 
 export default function AdminUsersPage() {

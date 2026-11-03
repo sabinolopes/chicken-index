@@ -1,3 +1,4 @@
+import { parsePrice, todayInBrazil } from "@/lib/parse";
 import { BRANDS, PRICE_KINDS, type PriceKind, type StateType } from "./types";
 
 export const UFS = [
@@ -5,18 +6,16 @@ export const UFS = [
   "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO",
 ] as const;
 
-export const MAX_PHOTO_BYTES = 1024 * 1024; // igual ao limite do bucket
+// A foto chega já comprimida pelo navegador (~150 KB); 1 MB é folga para o JPEG de fallback.
+export const MAX_PHOTO_BYTES = 1024 * 1024;
 export const PHOTO_MIME_TYPES = ["image/webp", "image/jpeg"];
 
-/** "21,99" | "21.99" | "R$ 21,99" → 21.99 (ou NaN). */
-export function parsePrice(raw: string) {
-  const cleaned = raw.replace(/[^\d,.]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
-  return cleaned ? Math.round(Number(cleaned) * 100) / 100 : NaN;
-}
-
-/** Data de hoje (YYYY-MM-DD) no fuso de Brasília. */
-export function todayInBrazil(now = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(now);
+/** Confere a foto comprimida enviada no formulário (tipo e tamanho), sem confiar no cliente. */
+export function parsePhotoFile(value: FormDataEntryValue | null): { file: File } | { error: string } {
+  if (!(value instanceof File) || value.size === 0) return { error: "Foto comprimida ausente." };
+  if (!PHOTO_MIME_TYPES.includes(value.type)) return { error: "A foto deve estar em .webp ou .jpg." };
+  if (value.size > MAX_PHOTO_BYTES) return { error: "Foto comprimida maior que 1 MB." };
+  return { file: value };
 }
 
 export interface PriceInput {

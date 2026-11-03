@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { CheckCircle2, Save, TriangleAlert } from "lucide-react";
-import { updateSettings } from "@/app/admin/actions";
-import type { EconomicSettings } from "@/lib/types";
+import { updateSettings } from "@/modules/settings/actions";
+import type { EconomicSettings } from "@/modules/settings/types";
 import { centsFromNumber, formatDateTime } from "@/lib/format";
 import { MoneyInput } from "./money-input";
 import { labelClass, secondaryButtonClass } from "./ui";

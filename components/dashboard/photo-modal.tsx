@@ -15,7 +15,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import type { ChickenPrice } from "@/lib/types";
+import type { ChickenPrice } from "@/modules/prices/types";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { AuditBadge, PriceKindBadge } from "./gallery";
 

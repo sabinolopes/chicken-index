@@ -79,11 +79,12 @@ Cada `git push` na `main` gera um novo deploy. A home fica em cache por 1 hora e
 |---|---|
 | `app/page.tsx` | Dashboard público (cacheado 1h, invalidado quando o admin cadastra) |
 | `app/admin/` | Login, painel e formulário mobile de cadastro (`/admin/novo`) |
-| `app/admin/actions.ts` | Server Actions: login, cadastro, exclusão, salários, convite e remoção de admins |
 | `app/auth/definir-senha/` | Página do link de convite: valida o token e define a senha |
-| `lib/data.ts` | Leitura pública com `'use cache'` (1 hora) |
-| `lib/upload/process-photo.ts` | Pipeline no navegador: SHA-256 → EXIF → compressão .webp |
-| `lib/r2.ts` | Upload e exclusão das fotos no Cloudflare R2 (só servidor) |
+| `modules/<domínio>/` | Regras por domínio: `actions` (Server Actions finas) → `service` (regras, testadas) → `repository` (banco). Detalhes no CLAUDE.md, seção 7 |
+| `modules/dashboard/queries.ts` | Leitura pública com `'use cache'` (1 hora) |
+| `modules/photos/process-photo.ts` | Pipeline no navegador: SHA-256 → EXIF → compressão .webp |
+| `modules/photos/storage.ts` | Upload e exclusão das fotos no Cloudflare R2 (só servidor) |
+| `lib/` | Utilitários sem domínio (formatação, parse, resultado das actions, clientes Supabase) |
 | `proxy.ts` | Renovação de sessão e proteção de `/admin` |
 | `supabase/schema.sql` | Schema completo do banco |
 

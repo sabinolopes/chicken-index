@@ -12,8 +12,8 @@ import {
   YAxis,
   type TooltipContentProps,
 } from "recharts";
-import type { WeeklyPoint } from "@/lib/stats";
-import { BRANDS } from "@/lib/types";
+import type { WeeklyPoint } from "@/modules/dashboard/stats";
+import { BRANDS } from "@/modules/prices/types";
 import { formatBRL, formatShortDate } from "@/lib/format";
 
 // Cor segue a marca (nunca a posição), para não repintar ao filtrar.

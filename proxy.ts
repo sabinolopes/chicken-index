@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { isAdminUser } from "@/lib/admin-role";
+import { isAdminUser } from "@/modules/auth/role";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 /**

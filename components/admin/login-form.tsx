@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { LogIn, TriangleAlert } from "lucide-react";
-import { signIn } from "@/app/admin/actions";
+import { signIn } from "@/modules/auth/actions";
 import { inputClass, labelClass, primaryButtonClass } from "./ui";
 
 export function LoginForm() {

@@ -120,7 +120,7 @@ create policy "economic_settings_auth_update" on public.economic_settings
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- ---------------------------------------------------------------------
--- Fotos: ficam no Cloudflare R2 (lib/r2.ts), não no Supabase Storage.
+-- Fotos: ficam no Cloudflare R2 (modules/photos/storage.ts), não no Supabase Storage.
 -- Limpeza de bancos antigos que ainda têm as policies do bucket `price-photos`:
 -- ---------------------------------------------------------------------
 drop policy if exists "price_photos_public_read" on storage.objects;

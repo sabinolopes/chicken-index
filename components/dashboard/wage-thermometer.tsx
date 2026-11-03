@@ -1,6 +1,6 @@
 import { Thermometer, TrendingDown, TrendingUp } from "lucide-react";
-import type { Kpis } from "@/lib/stats";
-import type { EconomicSettings } from "@/lib/types";
+import type { Kpis } from "@/modules/dashboard/stats";
+import type { EconomicSettings } from "@/modules/settings/types";
 import { formatBRL, formatKg, formatPct, formatShortDate } from "@/lib/format";
 
 export function WageThermometer({ kpis, settings }: { kpis: Kpis; settings: EconomicSettings }) {

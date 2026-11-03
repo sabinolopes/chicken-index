@@ -13,12 +13,14 @@ import {
   Smartphone,
   TriangleAlert,
 } from "lucide-react";
-import { createPrice, type ActionResult } from "@/app/admin/actions";
-import type { MarketSuggestion } from "@/lib/admin-data";
-import { BRANDS, PRICE_KIND_LABEL, PRICE_KINDS, type PriceKind, type StateType } from "@/lib/types";
-import { UFS, parsePrice, todayInBrazil } from "@/lib/validation";
+import { parsePrice, todayInBrazil } from "@/lib/parse";
+import { createPrice } from "@/modules/prices/actions";
+import type { RegisterPriceResult } from "@/modules/prices/service";
+import type { MarketSuggestion } from "@/modules/prices/suggestions";
+import { BRANDS, PRICE_KIND_LABEL, PRICE_KINDS, type PriceKind, type StateType } from "@/modules/prices/types";
+import { UFS } from "@/modules/prices/validation";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
-import { localIsoDate, processPhoto, type ProcessStep, type ProcessedPhoto } from "@/lib/upload/process-photo";
+import { localIsoDate, processPhoto, type ProcessStep, type ProcessedPhoto } from "@/modules/photos/process-photo";
 import { MoneyInput } from "./money-input";
 import { inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "./ui";
 
@@ -65,7 +67,7 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
   const [uf, setUf] = useState("");
   const [recordedAt, setRecordedAt] = useState("");
 
-  const [result, setResult] = useState<ActionResult | null>(null);
+  const [result, setResult] = useState<RegisterPriceResult | null>(null);
   const [pending, startTransition] = useTransition();
 
   const markets = [...new Set(suggestions.map((suggestion) => suggestion.market_name))];

@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { BadgeCheck, Loader2, Trash2, TriangleAlert } from "lucide-react";
-import { deletePrice } from "@/app/admin/actions";
-import { PRICE_KIND_LABEL, type ChickenPrice } from "@/lib/types";
+import { deletePrice } from "@/modules/prices/actions";
+import { PRICE_KIND_LABEL, type ChickenPrice } from "@/modules/prices/types";
 import { formatBRL, formatDate } from "@/lib/format";
 
 export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total: number }) {

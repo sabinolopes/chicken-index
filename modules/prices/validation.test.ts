@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePrice, parsePriceForm, todayInBrazil } from "@/lib/validation";
+import { MAX_PHOTO_BYTES, parsePhotoFile, parsePriceForm } from "@/modules/prices/validation";
 
 const SHA = "a".repeat(64);
 
@@ -29,27 +29,6 @@ const errorOf = (overrides: Record<string, string>) => {
   const result = parsePriceForm(priceForm(overrides));
   return "error" in result ? result.error : null;
 };
-
-describe("parsePrice", () => {
-  it("aceita vírgula, ponto e o formato da máscara com milhar", () => {
-    expect(parsePrice("21,99")).toBe(21.99);
-    expect(parsePrice("21.99")).toBe(21.99);
-    expect(parsePrice("R$ 1.621,00")).toBe(1621);
-    expect(parsePrice("1.518")).toBe(1518);
-  });
-
-  it("devolve NaN quando não há número", () => {
-    expect(parsePrice("")).toBeNaN();
-    expect(parsePrice("R$")).toBeNaN();
-  });
-});
-
-describe("todayInBrazil", () => {
-  it("usa o fuso de Brasília: 23h de 02/11 em São Paulo ainda é dia 02", () => {
-    expect(todayInBrazil(new Date("2026-11-03T02:00:00Z"))).toBe("2026-11-02");
-    expect(todayInBrazil(new Date("2026-11-03T03:00:00Z"))).toBe("2026-11-03");
-  });
-});
 
 describe("parsePriceForm", () => {
   it("normaliza um cadastro válido para o formato do banco", () => {
@@ -114,5 +93,23 @@ describe("parsePriceForm", () => {
   it("corta textos longos para não gravar lixo no banco", () => {
     const result = parsePriceForm(priceForm({ market_name: "M".repeat(500) }));
     expect(result).toMatchObject({ data: { market_name: "M".repeat(80) } });
+  });
+});
+
+describe("parsePhotoFile", () => {
+  const photo = (bytes: number, type: string) => new File([new Uint8Array(bytes)], "etiqueta", { type });
+
+  it("aceita a foto comprimida em webp ou jpeg", () => {
+    const file = photo(150 * 1024, "image/webp");
+    expect(parsePhotoFile(file)).toEqual({ file });
+    expect(parsePhotoFile(photo(10, "image/jpeg"))).toHaveProperty("file");
+  });
+
+  it("recusa campo vazio, texto no lugar do arquivo, outro formato ou arquivo grande demais", () => {
+    expect(parsePhotoFile(null)).toEqual({ error: "Foto comprimida ausente." });
+    expect(parsePhotoFile("foto.webp")).toEqual({ error: "Foto comprimida ausente." });
+    expect(parsePhotoFile(photo(0, "image/webp"))).toEqual({ error: "Foto comprimida ausente." });
+    expect(parsePhotoFile(photo(10, "image/png"))).toEqual({ error: "A foto deve estar em .webp ou .jpg." });
+    expect(parsePhotoFile(photo(MAX_PHOTO_BYTES + 1, "image/webp"))).toEqual({ error: "Foto comprimida maior que 1 MB." });
   });
 });

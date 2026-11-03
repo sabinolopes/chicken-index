@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDevice, localIsoDate, sha256Hex } from "@/lib/upload/process-photo";
+import { formatDevice, localIsoDate, sha256Hex } from "@/modules/photos/process-photo";
 
 describe("sha256Hex", () => {
   it("gera o mesmo hash que o sha256sum (quem tiver a foto original consegue conferir)", async () => {

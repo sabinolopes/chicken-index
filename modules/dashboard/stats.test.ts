@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { computeKpis, weeklySeries, weekStart } from "@/lib/stats";
-import type { ChickenPrice, EconomicSettings, PriceKind } from "@/lib/types";
+import { computeKpis, weeklySeries, weekStart } from "@/modules/dashboard/stats";
+import type { ChickenPrice, PriceKind } from "@/modules/prices/types";
+import type { EconomicSettings } from "@/modules/settings/types";
 
 const SETTINGS: EconomicSettings = { min_wage: 1500, avg_wage: 3000, updated_at: "2026-01-01T00:00:00Z" };
 

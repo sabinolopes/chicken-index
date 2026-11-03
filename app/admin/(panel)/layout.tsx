@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Drumstick, ExternalLink, LogOut, Users } from "lucide-react";
-import { getAdmin } from "@/lib/auth";
-import { signOut } from "@/app/admin/actions";
+import { getAdmin } from "@/modules/auth/session";
+import { signOut } from "@/modules/auth/actions";
 
 export const metadata: Metadata = { title: "Admin · Frangômetro", robots: { index: false } };
 

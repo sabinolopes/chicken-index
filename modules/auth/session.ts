@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
-import { createServerSupabase } from "./supabase/server";
-import { isAdminUser } from "./admin-role";
-
-export { isAdminUser };
+import { createServerSupabase } from "@/lib/supabase/server";
+import { isAdminUser } from "./role";
 
 export interface AdminUser {
   id: string;
@@ -15,9 +13,11 @@ export async function getAdmin(): Promise<AdminUser | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return isAdminUser(user) ? { id: user!.id, email: user!.email ?? "admin" } : null;
+  if (!user || !isAdminUser(user)) return null;
+  return { id: user.id, email: user.email ?? "admin" };
 }
 
+/** Use no início de toda página ou ação de admin: sem permissão, vai para o login. */
 export async function requireAdmin(): Promise<AdminUser> {
   const admin = await getAdmin();
   if (!admin) redirect("/admin/login");
