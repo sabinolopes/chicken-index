@@ -1,5 +1,5 @@
 import { parsePrice, todayInBrazil } from "@/lib/parse";
-import { BRANDS, PRICE_KINDS, type PriceKind, type StateType } from "./types";
+import { normalizeBrand, OTHER_BRAND, PRICE_KINDS, type PriceKind, type StateType } from "./types";
 
 export const UFS = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",
@@ -37,7 +37,7 @@ const text = (value: FormDataEntryValue | null, max = 80) => String(value ?? "")
 
 /** Lê os campos crus do formulário, já aparados e com tamanho limitado. */
 function readPriceFields(form: FormData) {
-  const brand = text(form.get("brand"));
+  const brand = normalizeBrand(text(form.get("brand")));
   const stateType = text(form.get("state_type"));
   const priceKind = text(form.get("price_kind")) || "regular";
   const price = parsePrice(text(form.get("price_per_kg")));
@@ -59,7 +59,10 @@ const isValidRecordedAt = (date: string) =>
 /** Primeira regra violada, na ordem em que os campos aparecem no formulário; null se tudo estiver certo. */
 function firstFieldError(fields: ReturnType<typeof readPriceFields>): string | null {
   const rules: [valid: boolean, message: string][] = [
-    [isOneOf(BRANDS, fields.brand), "Selecione a marca."],
+    [Boolean(fields.brand), "Selecione a marca."],
+    // "Outra" sozinha não diz nada: o formulário manda a marca digitada no lugar dela.
+    [fields.brand !== OTHER_BRAND, "Digite qual é a marca."],
+    [fields.brand.length >= 2, "Nome da marca muito curto."],
     [isOneOf(["resfriado", "congelado"], fields.stateType), "Selecione resfriado ou congelado."],
     [isOneOf(PRICE_KINDS, fields.priceKind), "Tipo de preço inválido."],
     [Number.isFinite(fields.price) && fields.price >= 1 && fields.price <= 500, "Preço por kg inválido (ex.: 21,99)."],

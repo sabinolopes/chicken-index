@@ -1,11 +1,14 @@
 import type { ProcessedPhoto, ProcessStep } from "@/modules/photos/process-photo";
 import type { MarketSuggestion } from "@/modules/prices/suggestions";
-import type { PriceKind, StateType } from "@/modules/prices/types";
+import { normalizeBrand, OTHER_BRAND, type PriceKind, type StateType } from "@/modules/prices/types";
 
 /** Campos digitados/escolhidos no formulário (a foto e o EXIF vêm do processamento). */
 export interface PriceFields {
   price: string;
+  /** Botão escolhido (Sadia, Seara, Perdigão ou "Outra"). */
   brand: string;
+  /** Marca digitada quando o botão é "Outra" (Oi Frango, Ki Frango...). */
+  otherBrand: string;
   stateType: StateType;
   priceKind: PriceKind;
   market: string;
@@ -17,6 +20,7 @@ export interface PriceFields {
 export const EMPTY_FIELDS: PriceFields = {
   price: "",
   brand: "",
+  otherBrand: "",
   stateType: "resfriado",
   priceKind: "regular",
   market: "",
@@ -50,9 +54,14 @@ export const priceLooksWrong = (price: number) => price > 0 && (price < PLAUSIBL
 /** A data informada é diferente do dia em que a câmera registrou a foto. */
 export const dateDiffersFromPhoto = (photoDay: string | null, recordedAt: string) => photoDay !== null && recordedAt !== "" && photoDay !== recordedAt;
 
-/** Botão "Publicar" só libera com foto pronta e todos os campos preenchidos. */
+/** Marca que vai para o servidor: a do botão, ou a digitada quando o botão é "Outra". */
+export const resolvedBrand = (fields: Pick<PriceFields, "brand" | "otherBrand">) =>
+  fields.brand === OTHER_BRAND ? normalizeBrand(fields.otherBrand) : fields.brand;
+
+/** Botão "Publicar" só libera com foto pronta e todos os campos preenchidos (inclusive a marca digitada). */
 export function isReadyToSubmit({ fields, parsedPrice, photoReady }: { fields: PriceFields; parsedPrice: number; photoReady: boolean }) {
-  return photoReady && parsedPrice > 0 && Boolean(fields.brand && fields.market.trim() && fields.city.trim() && fields.uf && fields.recordedAt);
+  const brandReady = resolvedBrand(fields).length >= 2;
+  return photoReady && parsedPrice > 0 && brandReady && Boolean(fields.market.trim() && fields.city.trim() && fields.uf && fields.recordedAt);
 }
 
 /** Junta ao formulário a foto comprimida e a prova de auditoria calculada no navegador. */

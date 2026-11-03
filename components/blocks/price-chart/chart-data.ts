@@ -1,6 +1,6 @@
 import { formatShortDate } from "@/lib/format";
 import type { WeeklyPoint } from "@/modules/dashboard/stats";
-import { BRANDS } from "@/modules/prices/types";
+import { BRANDS, OTHER_BRAND } from "@/modules/prices/types";
 
 export const AVG_KEY = "Média geral";
 export const PROMO_KEY = "Promoções (média)";
@@ -12,6 +12,9 @@ export const BRAND_COLORS: Record<string, string> = {
   Perdigão: "var(--series-3)",
   Outra: "var(--series-4)",
 };
+
+/** Nome da série na legenda, na tabela e na dica: o grupo "Outra" junta várias marcas. */
+export const brandLabel = (brand: string) => (brand === OTHER_BRAND ? "Outras marcas" : brand);
 
 export type ChartRow = { week: string; label: string } & Record<string, number | string | undefined>;
 

@@ -67,7 +67,9 @@ describe("parsePriceForm", () => {
   });
 
   it("recusa cada campo inválido com a mensagem do campo", () => {
-    expect(errorOf({ brand: "Marca Desconhecida" })).toBe("Selecione a marca.");
+    expect(errorOf({ brand: "" })).toBe("Selecione a marca.");
+    expect(errorOf({ brand: "Outra" })).toBe("Digite qual é a marca.");
+    expect(errorOf({ brand: "x" })).toBe("Nome da marca muito curto.");
     expect(errorOf({ state_type: "assado" })).toBe("Selecione resfriado ou congelado.");
     expect(errorOf({ price_kind: "black-friday" })).toBe("Tipo de preço inválido.");
     expect(errorOf({ price_per_kg: "0,50" })).toBe("Preço por kg inválido (ex.: 21,99).");
@@ -93,6 +95,17 @@ describe("parsePriceForm", () => {
   it("corta textos longos para não gravar lixo no banco", () => {
     const result = parsePriceForm(priceForm({ market_name: "M".repeat(500) }));
     expect(result).toMatchObject({ data: { market_name: "M".repeat(80) } });
+  });
+});
+
+describe("marca digitada em 'Outra'", () => {
+  it("aceita qualquer marca e grava o nome arrumado", () => {
+    expect(parsePriceForm(priceForm({ brand: "  oi   frango " }))).toMatchObject({ data: { brand: "Oi Frango" } });
+    expect(parsePriceForm(priceForm({ brand: "Ki Frango" }))).toMatchObject({ data: { brand: "Ki Frango" } });
+  });
+
+  it("marca principal digitada vira a grafia oficial (não cria 'sadia' separada de 'Sadia')", () => {
+    expect(parsePriceForm(priceForm({ brand: "SADIA" }))).toMatchObject({ data: { brand: "Sadia" } });
   });
 });
 

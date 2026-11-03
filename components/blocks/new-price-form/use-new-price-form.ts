@@ -5,12 +5,12 @@ import { parsePrice, todayInBrazil } from "@/lib/parse";
 import { localIsoDate, processPhoto, type ProcessedPhoto, type ProcessStep } from "@/modules/photos/process-photo";
 import { createPrice } from "@/modules/prices/actions";
 import type { RegisterPriceResult } from "@/modules/prices/service";
-import type { MarketSuggestion } from "@/modules/prices/suggestions";
+import type { FormSuggestions } from "@/modules/prices/queries";
 import { appendPhoto, dateDiffersFromPhoto, EMPTY_FIELDS, isReadyToSubmit, type PriceFields } from "./form-rules";
 import { readLastPlace, rememberLastPlace } from "./last-place";
 
 /** Estado e ações do cadastro de preço: foto → campos → envio → próximo cadastro. */
-export function useNewPriceForm(suggestions: MarketSuggestion[]) {
+export function useNewPriceForm(suggestions: FormSuggestions) {
   const [photo, setPhoto] = useState<ProcessedPhoto | null>(null);
   const [step, setStep] = useState<ProcessStep | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function useNewPriceForm(suggestions: MarketSuggestion[]) {
 
   /** Mercado conhecido completa cidade e UF. */
   function changeMarket(market: string) {
-    const known = suggestions.find((suggestion) => suggestion.market_name === market);
+    const known = suggestions.markets.find((suggestion) => suggestion.market_name === market);
     setFields((current) => ({ ...current, market, ...(known && { city: known.city, uf: known.state }) }));
   }
 

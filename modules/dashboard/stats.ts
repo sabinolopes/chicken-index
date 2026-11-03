@@ -1,4 +1,4 @@
-import type { ChickenPrice } from "@/modules/prices/types";
+import { brandGroup, type ChickenPrice } from "@/modules/prices/types";
 import type { EconomicSettings } from "@/modules/settings/types";
 
 export interface WeeklyPoint {
@@ -48,11 +48,13 @@ export function weeklySeries(prices: ChickenPrice[]): WeeklyPoint[] {
   return [...groups.entries()]
     .sort(([firstWeek], [secondWeek]) => firstWeek.localeCompare(secondWeek))
     .map(([week, rows]) => {
+      // Oi Frango, Ki Frango etc. somam no grupo "Outra" (o gráfico tem cor fixa só para as principais).
       const brands = new Map<string, number[]>();
       for (const row of rows) {
-        const list = brands.get(row.brand);
+        const group = brandGroup(row.brand);
+        const list = brands.get(group);
         if (list) list.push(row.price_per_kg);
-        else brands.set(row.brand, [row.price_per_kg]);
+        else brands.set(group, [row.price_per_kg]);
       }
       const byBrand: Record<string, number> = {};
       for (const [brand, values] of brands) byBrand[brand] = round2(mean(values));

@@ -1,4 +1,4 @@
-import { AVG_KEY, BRAND_COLORS, PROMO_KEY } from "./chart-data";
+import { AVG_KEY, BRAND_COLORS, brandLabel, PROMO_KEY } from "./chart-data";
 
 /** Legenda sempre visível: a cor nunca é a única forma de identificar a série. */
 export function ChartLegend({ brands, hasPromo }: { brands: readonly string[]; hasPromo: boolean }) {
@@ -6,7 +6,7 @@ export function ChartLegend({ brands, hasPromo }: { brands: readonly string[]; h
     <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted" aria-label="Legenda">
       <LegendItem color="var(--series-avg)" label={AVG_KEY} thick />
       {brands.map((brand) => (
-        <LegendItem key={brand} color={BRAND_COLORS[brand]} label={brand} />
+        <LegendItem key={brand} color={BRAND_COLORS[brand]} label={brandLabel(brand)} />
       ))}
       {hasPromo && <LegendItem color="var(--series-promo)" label={PROMO_KEY} dashed />}
     </ul>

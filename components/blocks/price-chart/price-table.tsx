@@ -1,6 +1,6 @@
 import { formatBRL } from "@/lib/format";
 import type { WeeklyPoint } from "@/modules/dashboard/stats";
-import { AVG_KEY, type ChartRow } from "./chart-data";
+import { AVG_KEY, brandLabel, type ChartRow } from "./chart-data";
 
 interface PriceTableProps {
   rows: ChartRow[];
@@ -26,7 +26,7 @@ export function PriceTable({ rows, series, promoSeries, brands }: PriceTableProp
             <th className="py-2 pr-4 text-right font-medium">{AVG_KEY}</th>
             {brands.map((brand) => (
               <th key={brand} className="py-2 pr-4 text-right font-medium">
-                {brand}
+                {brandLabel(brand)}
               </th>
             ))}
             {hasPromo && <th className="py-2 pr-4 text-right font-medium">Promoções</th>}

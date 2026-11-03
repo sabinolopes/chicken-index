@@ -3,7 +3,7 @@
 import { Loader2, Send } from "lucide-react";
 import { Alert } from "@/components/elements/alert";
 import { Button } from "@/components/elements/button";
-import type { MarketSuggestion } from "@/modules/prices/suggestions";
+import type { FormSuggestions } from "@/modules/prices/queries";
 import { PhotoStep } from "./photo-step";
 import { PlaceStep } from "./place-step";
 import { ProductStep } from "./product-step";
@@ -11,7 +11,7 @@ import { SuccessPanel } from "./success-panel";
 import { useNewPriceForm } from "./use-new-price-form";
 
 /** Cadastro mobile em três etapas. Os campos só liberam depois que a foto foi processada. */
-export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] }) {
+export function NewPriceForm({ suggestions }: { suggestions: FormSuggestions }) {
   const form = useNewPriceForm(suggestions);
   const { result } = form;
 
@@ -26,12 +26,18 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
       className="space-y-5 pb-24 sm:pb-0"
     >
       <PhotoStep photo={form.photo} step={form.step} error={form.photoError} onSelect={form.selectPhoto} />
-      <ProductStep fields={form.fields} setField={form.setField} parsedPrice={form.parsedPrice} disabled={!form.photo} />
+      <ProductStep
+        fields={form.fields}
+        setField={form.setField}
+        parsedPrice={form.parsedPrice}
+        brandSuggestions={suggestions.brands}
+        disabled={!form.photo}
+      />
       <PlaceStep
         fields={form.fields}
         setField={form.setField}
         onMarketChange={form.changeMarket}
-        suggestions={suggestions}
+        suggestions={suggestions.markets}
         photoDay={form.photoDay}
         dateMismatch={form.dateMismatch}
         disabled={!form.photo}

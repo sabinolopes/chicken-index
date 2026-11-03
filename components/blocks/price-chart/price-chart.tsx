@@ -6,7 +6,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { ChoiceGroup } from "@/components/elements/choice-group";
 import { Panel, PanelHeader } from "@/components/elements/panel";
 import type { WeeklyPoint } from "@/modules/dashboard/stats";
-import { AVG_KEY, BRAND_COLORS, brandsInSeries, chartRows, priceAxis, PROMO_KEY } from "./chart-data";
+import { AVG_KEY, BRAND_COLORS, brandLabel, brandsInSeries, chartRows, priceAxis, PROMO_KEY } from "./chart-data";
 import { ChartLegend } from "./chart-legend";
 import { ChartTooltip } from "./chart-tooltip";
 import { PriceTable } from "./price-table";
@@ -76,6 +76,7 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
                   key={brand}
                   type="monotone"
                   dataKey={brand}
+                  name={brandLabel(brand)}
                   stroke={BRAND_COLORS[brand]}
                   strokeWidth={2}
                   dot={false}

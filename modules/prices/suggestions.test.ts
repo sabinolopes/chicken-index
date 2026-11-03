@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { uniqueMarkets } from "@/modules/prices/suggestions";
+import { otherBrands, uniqueMarkets } from "@/modules/prices/suggestions";
 
 describe("uniqueMarkets", () => {
   it("lista cada mercado uma vez, com o local do cadastro mais recente, em ordem alfabética", () => {
@@ -23,5 +23,11 @@ describe("uniqueMarkets", () => {
     ]).map((suggestion) => suggestion.market_name);
 
     expect(names).toEqual(["Assaí", "Ébano", "Zona Sul"]);
+  });
+});
+
+describe("otherBrands", () => {
+  it("sugere só as marcas digitadas antes, sem repetir, em ordem alfabética", () => {
+    expect(otherBrands(["Sadia", "Oi Frango", "Outra", "Ki Frango", "Oi Frango", "Seara"])).toEqual(["Ki Frango", "Oi Frango"]);
   });
 });

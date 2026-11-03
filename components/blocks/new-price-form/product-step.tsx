@@ -1,10 +1,10 @@
 import { ChoiceGroup } from "@/components/elements/choice-group";
-import { Field } from "@/components/elements/field";
+import { Field, Suggestions, TextInput } from "@/components/elements/field";
 import { FormSection } from "@/components/elements/form-section";
 import { MoneyInput } from "@/components/elements/money-input";
 import { formatBRL } from "@/lib/format";
-import { BRANDS, PRICE_KINDS } from "@/modules/prices/types";
-import { PRICE_KIND_HINT, PRICE_KIND_SHORT_LABEL, priceLooksWrong, type PriceFields } from "./form-rules";
+import { BRANDS, OTHER_BRAND, PRICE_KINDS } from "@/modules/prices/types";
+import { PRICE_KIND_HINT, PRICE_KIND_SHORT_LABEL, priceLooksWrong, resolvedBrand, type PriceFields } from "./form-rules";
 
 const STATE_TYPES = ["resfriado", "congelado"] as const;
 
@@ -12,11 +12,13 @@ interface ProductStepProps {
   fields: PriceFields;
   setField: <Field extends keyof PriceFields>(field: Field, value: PriceFields[Field]) => void;
   parsedPrice: number;
+  /** Marcas digitadas em cadastros anteriores, para não surgir "Oi Frango" e "oi frango" separados. */
+  brandSuggestions: string[];
   disabled: boolean;
 }
 
 /** Etapa 2: preço do kg, tipo de preço (normal/oferta/clube), marca e resfriado/congelado. */
-export function ProductStep({ fields, setField, parsedPrice, disabled }: ProductStepProps) {
+export function ProductStep({ fields, setField, parsedPrice, brandSuggestions, disabled }: ProductStepProps) {
   return (
     <FormSection legend="2. Preço e produto" disabled={disabled} className="flex flex-col gap-4">
       <Field
@@ -45,15 +47,31 @@ export function ProductStep({ fields, setField, parsedPrice, disabled }: Product
       </Field>
 
       <Field label="Marca">
+        <input type="hidden" name="brand" value={resolvedBrand(fields)} />
         <ChoiceGroup
           label="Marca"
-          name="brand"
           options={BRANDS}
           value={fields.brand as (typeof BRANDS)[number]}
           onChange={(value) => setField("brand", value)}
           className="grid-cols-2 min-[420px]:grid-cols-4"
         />
       </Field>
+
+      {fields.brand === OTHER_BRAND && (
+        <Field htmlFor="other-brand" label="Qual marca?" hint="Ex.: Oi Frango, Ki Frango, marca do próprio mercado.">
+          <TextInput
+            id="other-brand"
+            list="brand-options"
+            autoComplete="off"
+            autoFocus
+            required
+            maxLength={40}
+            value={fields.otherBrand}
+            onChange={(event) => setField("otherBrand", event.target.value)}
+          />
+          <Suggestions id="brand-options" options={brandSuggestions} />
+        </Field>
+      )}
 
       <Field label="Tipo">
         <ChoiceGroup

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { NewPriceForm, NewPriceFormSkeleton } from "@/components/blocks/new-price-form";
 import { requireAdmin } from "@/modules/auth/session";
-import { listMarketSuggestions } from "@/modules/prices/queries";
+import { listFormSuggestions } from "@/modules/prices/queries";
 
 export default function NewPricePage() {
   return (
@@ -17,6 +17,6 @@ export default function NewPricePage() {
 
 async function NewPriceLoader() {
   await requireAdmin();
-  const suggestions = await listMarketSuggestions();
+  const suggestions = await listFormSuggestions();
   return <NewPriceForm suggestions={suggestions} />;
 }

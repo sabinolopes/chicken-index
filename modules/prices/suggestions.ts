@@ -1,3 +1,5 @@
+import { brandGroup, OTHER_BRAND } from "./types";
+
 export interface MarketSuggestion {
   market_name: string;
   city: string;
@@ -15,4 +17,10 @@ export function uniqueMarkets(rows: MarketSuggestion[]): MarketSuggestion[] {
     byMarket.set(row.market_name, { market_name: row.market_name, city: row.city, state: row.state });
   }
   return [...byMarket.values()].sort((first, second) => first.market_name.localeCompare(second.market_name, "pt-BR"));
+}
+
+/** Marcas fora das principais já usadas antes, em ordem alfabética, para o autocompletar do campo "Qual marca?". */
+export function otherBrands(brands: string[]): string[] {
+  const others = brands.filter((brand) => brandGroup(brand) === OTHER_BRAND && brand !== OTHER_BRAND);
+  return [...new Set(others)].sort((first, second) => first.localeCompare(second, "pt-BR"));
 }

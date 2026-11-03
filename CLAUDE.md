@@ -37,7 +37,7 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
 
 ### Tabela `chicken_prices`
 - `id`: uuid PK
-- `brand`: text (Ex: Sadia, Seara, Perdigão, Outra)
+- `brand`: text, 2 a 40 caracteres (Sadia, Seara, Perdigão ou o nome digitado em "Outra": Oi Frango, Ki Frango...; registros antigos podem ter "Outra"). No gráfico, só as três principais têm linha própria; as demais somam em "Outras marcas" (`brandGroup` em `modules/prices/types.ts`).
 - `state_type`: text ('resfriado' | 'congelado')
 - `price_per_kg`: numeric(10,2) NOT NULL (Sempre o valor do KG na etiqueta)
 - `market_name`: text NOT NULL

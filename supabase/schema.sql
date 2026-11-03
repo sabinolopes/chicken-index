@@ -11,7 +11,8 @@ create extension if not exists "pgcrypto";
 -- ---------------------------------------------------------------------
 create table if not exists public.chicken_prices (
   id              uuid primary key default gen_random_uuid(),
-  brand           text not null default 'Outra',
+  -- Sadia/Seara/Perdigão ou o nome digitado em "Outra" (Oi Frango, Ki Frango...).
+  brand           text not null default 'Outra' check (char_length(trim(brand)) between 2 and 40),
   state_type      text not null default 'resfriado'
                     check (state_type in ('resfriado', 'congelado')),
   price_per_kg    numeric(10,2) not null check (price_per_kg > 0 and price_per_kg < 1000),
@@ -36,6 +37,10 @@ alter table public.chicken_prices add column if not exists price_kind text not n
 alter table public.chicken_prices drop constraint if exists chicken_prices_price_kind_check;
 alter table public.chicken_prices add constraint chicken_prices_price_kind_check
   check (price_kind in ('regular', 'oferta', 'clube'));
+-- Bancos criados antes da marca digitável:
+alter table public.chicken_prices drop constraint if exists chicken_prices_brand_check;
+alter table public.chicken_prices add constraint chicken_prices_brand_check
+  check (char_length(trim(brand)) between 2 and 40);
 
 create unique index if not exists chicken_prices_original_sha256_key
   on public.chicken_prices (original_sha256);

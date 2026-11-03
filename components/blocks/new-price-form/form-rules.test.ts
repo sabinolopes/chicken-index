@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendPhoto,
+  resolvedBrand,
   dateDiffersFromPhoto,
   EMPTY_FIELDS,
   isReadyToSubmit,
@@ -39,6 +40,19 @@ describe("isReadyToSubmit", () => {
     expect(isReadyToSubmit({ fields: filled, parsedPrice: Number.NaN, photoReady: true })).toBe(false);
     expect(isReadyToSubmit({ fields: { ...filled, brand: "" }, parsedPrice: 21.99, photoReady: true })).toBe(false);
     expect(isReadyToSubmit({ fields: { ...filled, market: "   " }, parsedPrice: 21.99, photoReady: true })).toBe(false);
+  });
+
+  it("com 'Outra', só libera depois de digitar a marca", () => {
+    const other = { ...filled, brand: "Outra" };
+    expect(isReadyToSubmit({ fields: { ...other, otherBrand: "" }, parsedPrice: 21.99, photoReady: true })).toBe(false);
+    expect(isReadyToSubmit({ fields: { ...other, otherBrand: "Oi Frango" }, parsedPrice: 21.99, photoReady: true })).toBe(true);
+  });
+});
+
+describe("resolvedBrand", () => {
+  it("manda a marca do botão, ou a digitada (arrumada) quando o botão é 'Outra'", () => {
+    expect(resolvedBrand({ brand: "Seara", otherBrand: "ignorado" })).toBe("Seara");
+    expect(resolvedBrand({ brand: "Outra", otherBrand: " oi frango " })).toBe("Oi Frango");
   });
 });
 

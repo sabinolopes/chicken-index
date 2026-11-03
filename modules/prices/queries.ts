@@ -1,6 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { PRICE_COLUMNS, toChickenPrice } from "./repository";
-import { uniqueMarkets, type MarketSuggestion } from "./suggestions";
+import { otherBrands, uniqueMarkets, type MarketSuggestion } from "./suggestions";
 import type { ChickenPrice } from "./types";
 
 // Leituras do painel admin: sempre frescas (sem cache) e com a sessão do admin.
@@ -16,14 +16,21 @@ export async function listRecentPrices(limit: number): Promise<{ prices: Chicken
   return { prices: (data ?? []).map(toChickenPrice), total: count ?? 0 };
 }
 
-/** Mercados já cadastrados, para o autocompletar do formulário. */
-export async function listMarketSuggestions(): Promise<MarketSuggestion[]> {
+export interface FormSuggestions {
+  markets: MarketSuggestion[];
+  /** Marcas digitadas em "Outra" em cadastros anteriores. */
+  brands: string[];
+}
+
+/** Mercados e marcas já cadastrados, para o autocompletar do formulário. */
+export async function listFormSuggestions(): Promise<FormSuggestions> {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase
     .from("chicken_prices")
-    .select("market_name, city, state")
+    .select("market_name, city, state, brand")
     .order("created_at", { ascending: false })
     .limit(1000);
-  if (error) throw new Error(`Falha ao carregar mercados: ${error.message}`);
-  return uniqueMarkets(data ?? []);
+  if (error) throw new Error(`Falha ao carregar sugestões: ${error.message}`);
+  const rows = data ?? [];
+  return { markets: uniqueMarkets(rows), brands: otherBrands(rows.map((row) => row.brand)) };
 }

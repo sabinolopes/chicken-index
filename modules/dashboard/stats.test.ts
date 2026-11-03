@@ -55,6 +55,16 @@ describe("weeklySeries", () => {
     ]);
   });
 
+  it("marcas digitadas em 'Outra' somam no mesmo grupo do gráfico", () => {
+    const [week] = weeklySeries([
+      price("2026-11-03", 18, { brand: "Oi Frango" }),
+      price("2026-11-03", 20, { brand: "Ki Frango" }),
+      price("2026-11-03", 22, { brand: "Sadia" }),
+    ]);
+    expect(week.byBrand).toEqual({ Outra: 19, Sadia: 22 });
+    expect(week.average).toBe(20);
+  });
+
   it("arredonda as médias em centavos", () => {
     const [week] = weeklySeries([price("2026-11-03", 20), price("2026-11-03", 20), price("2026-11-03", 21)]);
     expect(week.average).toBe(20.33);
