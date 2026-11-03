@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Drumstick } from "lucide-react";
-import { SetPasswordForm } from "@/components/admin/set-password-form";
+import { SetPasswordForm } from "@/components/blocks/set-password-form";
 
 export const metadata: Metadata = { title: "Definir senha · Frangômetro", robots: { index: false } };
 

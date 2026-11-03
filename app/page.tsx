@@ -1,4 +1,4 @@
-import { Dashboard } from "@/components/dashboard/dashboard";
+import { Dashboard } from "@/components/pages/dashboard";
 import { getDashboardData } from "@/modules/dashboard/queries";
 
 // Sem queries por visitante: `getDashboardData` é `'use cache'` com revalidação de 1h

@@ -111,6 +111,36 @@ Domínios: `auth` (sessão e role), `prices` (cadastro e exclusão), `settings` 
 
 - **Dependências apontam para dentro:** `actions` → `service` → interfaces (`PricesRepository`, `PhotoStorage`, `AdminDirectory`). O serviço importa só tipos dessas interfaces; a implementação real é escolhida na action.
 - **`lib/`** guarda apenas o que é genérico e sem domínio: `format.ts`, `parse.ts`, `action-result.ts` e os clientes em `lib/supabase/`.
-- **`components/`** só renderiza: recebe dados por props e chama as `actions` do módulo.
+- **`components/`** só renderiza: recebe dados por props e chama as `actions` do módulo (ver seção 8).
 - **Novo domínio ou nova regra:** crie o `service.ts` com teste antes de ligar a action; se a função de serviço precisar de mais de 3 dependências, receba um objeto.
+
+## 8. Componentes em Atomic Design (`components/`)
+
+Inspirado na hierarquia `elements → blocks → pages` do Gotenks:
+
+| Camada | Pasta | O que é | Pode importar |
+|---|---|---|---|
+| **Elements** (átomos) | `components/elements/<nome>.tsx` | Peças genéricas, sem domínio: `Button`/`IconButton`, `Alert`/`ActionMessage`, `Badge`, `Field`/`TextInput`/`Select`, `MoneyInput`, `ChoiceGroup`, `Panel`/`PanelHeader`, `FormSection`, `Modal`, `CopyButton`, `Skeleton` | Só `lib/` |
+| **Blocks** (moléculas) | `components/blocks/<nome>/` | Uma funcionalidade do domínio (galeria, gráfico, formulário de cadastro…) | Elements, outros blocks, `modules/*` (`actions`, `types`, funções puras) |
+| **Pages** (organismos) | `components/pages/<nome>/` | Composição de uma tela inteira com o estado que liga os blocks | Elements, blocks, `modules/*` |
+
+As rotas em `app/` só buscam dados (`queries`) e montam uma page ou blocks; não têm marcação de UI própria além de layout.
+
+**Estrutura de um block** (cada um numa pasta, mesmo que tenha um arquivo só):
+```
+components/blocks/new-price-form/
+  index.ts                 <- só reexporta o que o resto do app usa
+  new-price-form.tsx       <- composição (pouca lógica)
+  use-new-price-form.ts    <- estado e ações (hook), quando há estado não trivial
+  photo-step.tsx ...       <- subcomponentes do próprio block
+  form-rules.ts            <- regras puras (sem React), sempre com form-rules.test.ts
+```
+
+Regras:
+- **Antes de escrever classe Tailwind repetida, procure o element.** Botão, mensagem, selo, campo, grupo de escolha, painel e modal já existem; se um padrão visual aparecer em 2+ blocks, vire element.
+- **Lógica fora do JSX:** cálculo, formatação de texto e regra de negócio de tela vão para `*.ts` puro com teste (ex.: `chart-data.ts`, `filter-options.ts`, `share-text.ts`, `zoom.ts`). Estado com várias ações vai para um hook `use-*.ts`.
+- **Comunicação filho → pai só por props de callback** (`onChange`, `onSelect`, `onClose`). Filho nunca chama método do pai nem lê estado de irmão.
+- **Importe pelo `index.ts` do block** (`@/components/blocks/gallery`), não pelos arquivos internos — exceto nos testes do próprio block.
+- **Textos de interface ficam no próprio componente**, em pt-BR (o site é só para o Brasil). Se um dia houver outro idioma, extraia para `texts.ts` planos por block.
+- **Testes de componente** usam Testing Library no jsdom (`// @vitest-environment jsdom` no topo): testam o que o usuário vê e faz (papel acessível, clique, digitação), nunca detalhes internos.
 

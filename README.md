@@ -85,6 +85,9 @@ Cada `git push` na `main` gera um novo deploy. A home fica em cache por 1 hora e
 | `modules/photos/process-photo.ts` | Pipeline no navegador: SHA-256 → EXIF → compressão .webp |
 | `modules/photos/storage.ts` | Upload e exclusão das fotos no Cloudflare R2 (só servidor) |
 | `lib/` | Utilitários sem domínio (formatação, parse, resultado das actions, clientes Supabase) |
+| `components/elements/` | Átomos de interface (botão, campo, alerta, modal…) |
+| `components/blocks/<nome>/` | Funcionalidades (galeria, gráfico, cadastro…), cada uma com seus testes. Detalhes no CLAUDE.md, seção 8 |
+| `components/pages/dashboard/` | Composição do dashboard público |
 | `proxy.ts` | Renovação de sessão e proteção de `/admin` |
 | `supabase/schema.sql` | Schema completo do banco |
 

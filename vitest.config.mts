@@ -10,8 +10,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Node por padrão; testes de componente pedem o navegador simulado com `// @vitest-environment jsdom`.
     environment: "node",
-    include: ["**/*.test.ts"],
+    include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**"],
+    setupFiles: ["test/setup.ts"],
   },
 });

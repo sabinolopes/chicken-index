@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Drumstick } from "lucide-react";
-import { LoginForm } from "@/components/admin/login-form";
+import { LoginForm } from "@/components/blocks/login-form";
 
 export const metadata: Metadata = { title: "Entrar · Admin · Frangômetro", robots: { index: false } };
 

@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/modules/auth/session";
 import { listMarketSuggestions } from "@/modules/prices/queries";
-import { NewPriceForm } from "@/components/admin/new-price-form";
+import { NewPriceForm } from "@/components/blocks/new-price-form";
+import { Skeleton } from "@/components/elements/skeleton";
 
 export default function NewPricePage() {
   return (
@@ -26,8 +27,8 @@ async function NewPriceLoader() {
 function FormSkeleton() {
   return (
     <div className="space-y-5" aria-hidden>
-      <div className="h-40 animate-pulse rounded-xl bg-stone-200/70" />
-      <div className="h-64 animate-pulse rounded-xl bg-stone-200/70" />
+      <Skeleton className="h-40" />
+      <Skeleton className="h-64" />
     </div>
   );
 }

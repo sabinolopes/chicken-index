@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/modules/auth/session";
 import { listAdmins } from "@/modules/admins/queries";
-import { AdminList, InviteAdminForm } from "@/components/admin/admin-users";
+import { AdminList, InviteAdminForm } from "@/components/blocks/admin-users";
+import { Skeleton } from "@/components/elements/skeleton";
 
 export default function AdminUsersPage() {
   return (
@@ -11,7 +12,7 @@ export default function AdminUsersPage() {
         Só quem está aqui pode cadastrar preços. Novos admins entram por convite: recebem um e-mail e definem a própria
         senha.
       </p>
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-stone-200/70" aria-hidden />}>
+      <Suspense fallback={<Skeleton className="h-64" />}>
         <AdminUsers />
       </Suspense>
     </>

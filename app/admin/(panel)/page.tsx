@@ -4,8 +4,9 @@ import { Camera } from "lucide-react";
 import { requireAdmin } from "@/modules/auth/session";
 import { listRecentPrices } from "@/modules/prices/queries";
 import { getSettings } from "@/modules/settings/queries";
-import { RecentPrices } from "@/components/admin/recent-prices";
-import { SettingsForm } from "@/components/admin/settings-form";
+import { RecentPrices } from "@/components/blocks/recent-prices";
+import { SettingsForm } from "@/components/blocks/settings-form";
+import { Skeleton } from "@/components/elements/skeleton";
 
 export default function AdminHomePage() {
   return (
@@ -18,7 +19,7 @@ export default function AdminHomePage() {
         Cadastrar novo preço
       </Link>
 
-      <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-stone-200/70" aria-hidden />}>
+      <Suspense fallback={<Skeleton className="h-96" />}>
         <AdminHome />
       </Suspense>
     </div>
