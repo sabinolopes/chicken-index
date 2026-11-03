@@ -4,6 +4,8 @@ import { displayNameFromMetadata } from "@/modules/auth/account-rules";
 
 export type LinkStatus =
   | { kind: "checking" }
+  /** Convite ainda não usado: o código só é gasto quando a pessoa salvar a senha. */
+  | { kind: "claimable"; tokenHash: string; type: EmailOtpType }
   | { kind: "ready"; email: string; name: string | null }
   | { kind: "invalid"; message: string };
 
@@ -12,31 +14,40 @@ const EXPIRED = "Este link expirou ou já foi usado.";
 /** Mensagem do Supabase no link (ex.: "Email link is invalid or has expired") em português. */
 export const linkErrorMessage = (description: string) => (/expired|invalid/i.test(description) ? EXPIRED : description);
 
-/** Troca o que veio no link por uma sessão, em qualquer dos três formatos que o Supabase usa. */
-async function exchangeLinkForSession(hash: URLSearchParams, query: URLSearchParams) {
-  const supabase = createBrowserSupabase();
-  const accessToken = hash.get("access_token");
-  const refreshToken = hash.get("refresh_token");
-  if (accessToken && refreshToken) return supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+const CLAIMABLE_TYPES: readonly string[] = ["invite", "recovery", "magiclink", "email"];
 
+/**
+ * O que veio no endereço da página, sem chamar nada. Links gerados pelo painel trazem
+ * `token_hash` (código ainda não usado); links antigos do e-mail já chegam com a sessão aberta.
+ */
+export function readLink({ hash, search }: { hash: string; search: string }) {
+  const fragment = new URLSearchParams(hash.replace(/^#/, ""));
+  const query = new URLSearchParams(search);
+  const error = fragment.get("error_description") ?? query.get("error_description");
   const tokenHash = query.get("token_hash");
-  const type = query.get("type") as EmailOtpType | null;
-  if (tokenHash && type) return supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+  const type = query.get("type");
+  return {
+    error: error ? linkErrorMessage(error) : null,
+    claim: tokenHash && type && CLAIMABLE_TYPES.includes(type) ? { tokenHash, type: type as EmailOtpType } : null,
+    session: { accessToken: fragment.get("access_token"), refreshToken: fragment.get("refresh_token"), code: query.get("code") },
+  };
+}
 
-  const code = query.get("code");
+/** Links antigos (fluxo do e-mail do Supabase): a sessão já veio pronta no endereço. */
+async function openSessionFromLink({ accessToken, refreshToken, code }: ReturnType<typeof readLink>["session"]) {
+  const supabase = createBrowserSupabase();
+  if (accessToken && refreshToken) return supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
   if (code) return supabase.auth.exchangeCodeForSession(code);
   return { error: null };
 }
 
-/** Abre a sessão a partir do link do e-mail (convite). Sem link, vale a sessão já aberta (trocar senha). */
+/** Estado inicial da página. Com convite do painel, não gasta o código: só avisa que dá para usá-lo. */
 export async function sessionFromLink(): Promise<LinkStatus> {
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  const query = new URLSearchParams(window.location.search);
+  const link = readLink(window.location);
+  if (link.error) return { kind: "invalid", message: link.error };
+  if (link.claim) return { kind: "claimable", ...link.claim };
 
-  const linkError = hash.get("error_description") ?? query.get("error_description");
-  if (linkError) return { kind: "invalid", message: linkErrorMessage(linkError) };
-
-  const { error } = await exchangeLinkForSession(hash, query);
+  const { error } = await openSessionFromLink(link.session);
   // Tira os tokens da barra de endereço (e do histórico).
   window.history.replaceState(null, "", window.location.pathname);
   if (error) return { kind: "invalid", message: EXPIRED };
@@ -44,6 +55,14 @@ export async function sessionFromLink(): Promise<LinkStatus> {
   const {
     data: { user },
   } = await createBrowserSupabase().auth.getUser();
-  if (!user) return { kind: "invalid", message: "Abra esta página pelo link do e-mail de convite." };
+  if (!user) return { kind: "invalid", message: "Abra esta página pelo link do convite." };
   return { kind: "ready", email: user.email ?? "", name: displayNameFromMetadata(user.user_metadata) };
+}
+
+/** Usa o código do convite e abre a sessão. Chamado só quando a pessoa salva a senha. */
+export async function claimInvite({ tokenHash, type }: { tokenHash: string; type: EmailOtpType }): Promise<LinkStatus> {
+  const { data, error } = await createBrowserSupabase().auth.verifyOtp({ token_hash: tokenHash, type });
+  if (error || !data.user) return { kind: "invalid", message: EXPIRED };
+  window.history.replaceState(null, "", window.location.pathname);
+  return { kind: "ready", email: data.user.email ?? "", name: displayNameFromMetadata(data.user.user_metadata) };
 }

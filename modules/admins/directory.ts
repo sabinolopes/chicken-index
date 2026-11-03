@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { displayNameFromMetadata } from "@/modules/auth/account-rules";
 import { isAdminUser } from "@/modules/auth/role";
+import { invitationUrl } from "./invite-url";
 
 export interface UserAccount {
   id: string;
@@ -18,10 +19,13 @@ export interface AdminDirectory {
   listUsers(): Promise<UserAccount[]>;
   /** Envia o convite; `alreadyRegistered` quando o e-mail já tem conta. */
   invite(email: string, redirectTo: string): Promise<{ userId: string } | { alreadyRegistered: true }>;
-  /** Cria a conta e devolve o link de convite sem enviar e-mail; `alreadyRegistered` quando já existe. */
-  inviteLink(email: string, redirectTo: string): Promise<{ userId: string; link: string } | { alreadyRegistered: true }>;
+  /**
+   * Cria a conta e devolve o link de convite sem enviar e-mail; `alreadyRegistered` quando já existe.
+   * O link aponta para `setPasswordUrl`, que só usa o código quando a pessoa salva a senha.
+   */
+  inviteLink(email: string, setPasswordUrl: string): Promise<{ userId: string; link: string } | { alreadyRegistered: true }>;
   /** Link de uso único para uma conta existente definir uma nova senha (sem enviar e-mail). */
-  passwordLink(email: string, redirectTo: string): Promise<string>;
+  passwordLink(email: string, setPasswordUrl: string): Promise<string>;
   grantAdmin(userId: string): Promise<void>;
   /** Apaga a conta: cancela convite pendente e impede novos logins. */
   deleteUser(userId: string): Promise<void>;
@@ -49,16 +53,17 @@ export function createAdminDirectory(): AdminDirectory {
       if (error) throw new Error(error.message);
       return { userId: data.user.id };
     },
-    async inviteLink(email, redirectTo) {
-      const { data, error } = await auth.generateLink({ type: "invite", email, options: { redirectTo } });
+    // Usa o `hashed_token` (e não o `action_link` do Supabase, que é gasto por quem abrir primeiro).
+    async inviteLink(email, setPasswordUrl) {
+      const { data, error } = await auth.generateLink({ type: "invite", email });
       if (error?.code === "email_exists") return { alreadyRegistered: true };
       if (error) throw new Error(error.message);
-      return { userId: data.user.id, link: data.properties.action_link };
+      return { userId: data.user.id, link: invitationUrl({ setPasswordUrl, tokenHash: data.properties.hashed_token, type: "invite" }) };
     },
-    async passwordLink(email, redirectTo) {
-      const { data, error } = await auth.generateLink({ type: "recovery", email, options: { redirectTo } });
+    async passwordLink(email, setPasswordUrl) {
+      const { data, error } = await auth.generateLink({ type: "recovery", email });
       if (error) throw new Error(error.message);
-      return data.properties.action_link;
+      return invitationUrl({ setPasswordUrl, tokenHash: data.properties.hashed_token, type: "recovery" });
     },
     async grantAdmin(userId) {
       const { error } = await auth.updateUserById(userId, { app_metadata: { role: "admin" } });

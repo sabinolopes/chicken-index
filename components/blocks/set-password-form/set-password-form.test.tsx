@@ -4,18 +4,25 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SetPasswordForm } from "@/components/blocks/set-password-form";
 
-// Fronteiras externas: a sessão vinda do link do e-mail, o Supabase e a navegação do Next.
+// Fronteiras externas: o link (sessão/convite), o Supabase e a navegação do Next.
+const sessionFromLink = vi.fn();
+const claimInvite = vi.fn();
 const updateUser = vi.fn();
 const replace = vi.fn();
+const calls: string[] = [];
 vi.mock("@/components/blocks/set-password-form/session-from-link", () => ({
-  sessionFromLink: vi.fn(async () => ({ kind: "ready", email: "xpto_99@exemplo.com", name: null })),
+  sessionFromLink: () => sessionFromLink(),
+  claimInvite: (link: unknown) => claimInvite(link),
 }));
 vi.mock("@/lib/supabase/browser", () => ({ createBrowserSupabase: () => ({ auth: { updateUser } }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 
+const READY = { kind: "ready", email: "xpto_99@exemplo.com", name: null };
+const CLAIMABLE = { kind: "claimable", tokenHash: "abc123", type: "invite" };
+
 async function fill({ name, password }: { name: string; password: string }) {
-  await screen.findByText("xpto_99@exemplo.com");
-  if (name) await userEvent.type(screen.getByLabelText("Seu nome"), name);
+  const nameField = await screen.findByLabelText("Seu nome");
+  if (name) await userEvent.type(nameField, name);
   await userEvent.type(screen.getByLabelText("Nova senha"), password);
   await userEvent.type(screen.getByLabelText("Repita a senha"), password);
   await userEvent.click(screen.getByRole("button", { name: "Salvar e entrar" }));
@@ -23,7 +30,16 @@ async function fill({ name, password }: { name: string; password: string }) {
 
 describe("SetPasswordForm", () => {
   beforeEach(() => {
-    updateUser.mockReset().mockResolvedValue({ error: null });
+    calls.length = 0;
+    sessionFromLink.mockReset().mockResolvedValue(READY);
+    claimInvite.mockReset().mockImplementation(async () => {
+      calls.push("claimInvite");
+      return READY;
+    });
+    updateUser.mockReset().mockImplementation(async () => {
+      calls.push("updateUser");
+      return { error: null };
+    });
     replace.mockReset();
   });
 
@@ -36,11 +52,45 @@ describe("SetPasswordForm", () => {
     expect(replace).toHaveBeenCalledWith("/admin");
   });
 
+  it("convite do painel: abrir o link não gasta o convite; só ao salvar, antes de gravar a senha", async () => {
+    sessionFromLink.mockResolvedValue(CLAIMABLE);
+    render(<SetPasswordForm />);
+
+    expect(await screen.findByText(/O link só é usado quando você salvar/)).toBeTruthy();
+    expect(claimInvite).not.toHaveBeenCalled();
+
+    await fill({ name: "Victor Félix", password: "senha-forte-1" });
+
+    expect(claimInvite).toHaveBeenCalledWith(CLAIMABLE);
+    expect(calls).toEqual(["claimInvite", "updateUser"]);
+    expect(replace).toHaveBeenCalledWith("/admin");
+  });
+
+  it("erro de digitação não gasta o convite", async () => {
+    sessionFromLink.mockResolvedValue(CLAIMABLE);
+    render(<SetPasswordForm />);
+    (await screen.findByLabelText("Nova senha")).removeAttribute("minLength");
+
+    await fill({ name: "Victor", password: "curta" });
+
+    expect(await screen.findByText("A senha precisa ter pelo menos 8 caracteres.")).toBeTruthy();
+    expect(claimInvite).not.toHaveBeenCalled();
+  });
+
+  it("convite vencido: avisa e não tenta gravar a senha", async () => {
+    sessionFromLink.mockResolvedValue(CLAIMABLE);
+    claimInvite.mockResolvedValue({ kind: "invalid", message: "Este link expirou ou já foi usado." });
+    render(<SetPasswordForm />);
+
+    await fill({ name: "Victor", password: "senha-forte-1" });
+
+    expect(await screen.findByText("Este link expirou ou já foi usado.")).toBeTruthy();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
   it("não envia nada sem nome", async () => {
     render(<SetPasswordForm />);
-    const nameField = await screen.findByLabelText("Seu nome");
-    // Sem o `required` do navegador, para conferir a validação do próprio formulário.
-    nameField.removeAttribute("required");
+    (await screen.findByLabelText("Seu nome")).removeAttribute("required");
 
     await fill({ name: "", password: "senha-forte-1" });
 

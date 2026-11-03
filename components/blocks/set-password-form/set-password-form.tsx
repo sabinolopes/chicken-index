@@ -9,7 +9,7 @@ import { Button } from "@/components/elements/button";
 import { Field, TextInput } from "@/components/elements/field";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { displayNameError, normalizeDisplayName, PASSWORD_MIN_LENGTH, passwordError } from "@/modules/auth/account-rules";
-import { sessionFromLink, type LinkStatus } from "./session-from-link";
+import { claimInvite, sessionFromLink, type LinkStatus } from "./session-from-link";
 
 /** Mensagem do Supabase ao salvar, em português. */
 const saveErrorMessage = (message: string) => (/different from the old/i.test(message) ? "Use uma senha diferente da anterior." : message);
@@ -30,6 +30,14 @@ export function SetPasswordForm() {
     });
   }, []);
 
+  /** Garante a sessão. Com convite do painel, é só aqui (ao salvar) que o código do link é usado. */
+  async function ensureSession() {
+    if (status.kind !== "claimable") return true;
+    const claimed = await claimInvite(status);
+    setStatus(claimed);
+    return claimed.kind === "ready";
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const typingError = displayNameError(name) ?? passwordError(password, confirmation);
@@ -37,6 +45,10 @@ export function SetPasswordForm() {
     if (typingError) return;
 
     setSaving(true);
+    if (!(await ensureSession())) {
+      setSaving(false);
+      return;
+    }
     const { error: updateError } = await createBrowserSupabase().auth.updateUser({
       password,
       data: { full_name: normalizeDisplayName(name) },
@@ -76,10 +88,16 @@ export function SetPasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-surface p-5">
-      <p className="text-sm text-muted">
-        Conta: <strong className="text-foreground">{status.email}</strong>
-      </p>
-      <input type="email" name="username" autoComplete="username" value={status.email} readOnly hidden />
+      {status.kind === "ready" ? (
+        <>
+          <p className="text-sm text-muted">
+            Conta: <strong className="text-foreground">{status.email}</strong>
+          </p>
+          <input type="email" name="username" autoComplete="username" value={status.email} readOnly hidden />
+        </>
+      ) : (
+        <p className="text-sm text-muted">Convite para o painel do Frangômetro. O link só é usado quando você salvar.</p>
+      )}
       <Field htmlFor="full-name" label="Seu nome" hint="Aparece para os outros admins na página Admins.">
         <TextInput id="full-name" autoComplete="name" required maxLength={60} value={name} onChange={(event) => setName(event.target.value)} />
       </Field>
