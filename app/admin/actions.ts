@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isAdminUser, requireAdmin } from "@/lib/auth";
 import { PRICES_CACHE_TAG } from "@/lib/data";
-import { PHOTO_BUCKET } from "@/lib/supabase/config";
+import { deletePhoto, photoKeyFromUrl, uploadPhoto } from "@/lib/r2";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { MAX_PHOTO_BYTES, parsePrice, parsePriceForm, PHOTO_MIME_TYPES, type PriceInput } from "@/lib/validation";
@@ -76,18 +76,17 @@ export async function createPrice(form: FormData): Promise<ActionResult> {
   }
 
   const ext = photo.type === "image/webp" ? "webp" : "jpg";
-  const path = `${input.recorded_at.slice(0, 7)}/${input.original_sha256}.${ext}`;
-  const { error: uploadError } = await supabase.storage.from(PHOTO_BUCKET).upload(path, photo, {
-    contentType: photo.type,
-    cacheControl: "31536000",
-    upsert: false,
-  });
-  if (uploadError) return { ok: false, error: `Falha no upload da foto: ${uploadError.message}` };
+  const key = `${input.recorded_at.slice(0, 7)}/${input.original_sha256}.${ext}`;
+  let photoUrl: string;
+  try {
+    photoUrl = await uploadPhoto(key, photo);
+  } catch (e) {
+    return { ok: false, error: `Falha no upload da foto: ${e instanceof Error ? e.message : e}` };
+  }
 
-  const photoUrl = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
   const { error: insertError } = await supabase.from("chicken_prices").insert({ ...input, photo_url: photoUrl });
   if (insertError) {
-    await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    await deletePhoto(key).catch(() => {});
     return { ok: false, error: `Falha ao salvar o registro: ${insertError.message}` };
   }
 
@@ -109,11 +108,14 @@ export async function deletePrice(id: string): Promise<ActionResult> {
   const { error: deleteError } = await supabase.from("chicken_prices").delete().eq("id", id);
   if (deleteError) return { ok: false, error: `Falha ao excluir: ${deleteError.message}` };
 
-  const marker = `/object/public/${PHOTO_BUCKET}/`;
-  const idx = row.photo_url.indexOf(marker);
-  if (idx >= 0) await supabase.storage.from(PHOTO_BUCKET).remove([row.photo_url.slice(idx + marker.length)]);
-
   refreshPublicPages();
+  // O registro já saiu do ar; se a foto não puder ser apagada, só avisa.
+  const key = photoKeyFromUrl(row.photo_url);
+  try {
+    if (key) await deletePhoto(key);
+  } catch (e) {
+    return { ok: false, error: `Registro excluído, mas a foto ficou no R2 (${e instanceof Error ? e.message : e}).` };
+  }
   return { ok: true, message: "Registro excluído." };
 }
 

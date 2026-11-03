@@ -1,4 +1,3 @@
-export const PHOTO_BUCKET = "price-photos";
 
 export function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";

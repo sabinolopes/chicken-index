@@ -120,34 +120,11 @@ create policy "economic_settings_auth_update" on public.economic_settings
   for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- ---------------------------------------------------------------------
--- Storage: bucket público `price-photos` (fotos .webp já comprimidas)
+-- Fotos: ficam no Cloudflare R2 (lib/r2.ts), não no Supabase Storage.
+-- Limpeza de bancos antigos que ainda têm as policies do bucket `price-photos`:
 -- ---------------------------------------------------------------------
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values (
-  'price-photos',
-  'price-photos',
-  true,
-  1048576, -- 1 MB por arquivo (as fotos chegam com ~150 KB)
-  array['image/webp', 'image/jpeg', 'image/png']
-)
-on conflict (id) do update set
-  public             = excluded.public,
-  file_size_limit    = excluded.file_size_limit,
-  allowed_mime_types = excluded.allowed_mime_types;
-
--- Bucket público: as fotos são servidas pela URL pública, sem SELECT para anon
--- (uma policy de leitura pública permitiria listar todos os arquivos do bucket).
 drop policy if exists "price_photos_public_read" on storage.objects;
+drop policy if exists "price_photos_admin_read" on storage.objects;
 drop policy if exists "price_photos_auth_insert" on storage.objects;
 drop policy if exists "price_photos_auth_update" on storage.objects;
 drop policy if exists "price_photos_auth_delete" on storage.objects;
-
-drop policy if exists "price_photos_admin_read" on storage.objects;
-create policy "price_photos_admin_read" on storage.objects
-  for select to authenticated using (bucket_id = 'price-photos' and public.is_admin()); -- necessária para excluir
-create policy "price_photos_auth_insert" on storage.objects
-  for insert to authenticated with check (bucket_id = 'price-photos' and public.is_admin());
-create policy "price_photos_auth_update" on storage.objects
-  for update to authenticated using (bucket_id = 'price-photos' and public.is_admin()) with check (bucket_id = 'price-photos' and public.is_admin());
-create policy "price_photos_auth_delete" on storage.objects
-  for delete to authenticated using (bucket_id = 'price-photos' and public.is_admin());

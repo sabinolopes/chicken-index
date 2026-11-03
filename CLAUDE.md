@@ -6,18 +6,19 @@ Sistema web público e auditável para monitoramento semanal do preço do quilo 
 - **Framework:** Next.js (App Router) com TypeScript
 - **Estilização:** Tailwind CSS + Lucide React (ícones)
 - **Gráficos:** Recharts (responsivo)
-- **Backend / DB / Auth / Storage:** Supabase (`@supabase/supabase-js` e `@supabase/ssr`)
+- **Backend / DB / Auth:** Supabase (`@supabase/supabase-js` e `@supabase/ssr`)
+- **Armazenamento das fotos:** Cloudflare R2 (API compatível com S3, via `aws4fetch` em `lib/r2.ts`, só no servidor) — 10 GB grátis e sem custo de tráfego de saída, para a galeria aguentar picos de acesso.
 - **Processamento Client-Side no Upload:**
   - `exifr`: Extração de metadados da câmera no navegador.
   - Web Crypto API nativa (`crypto.subtle.digest`): Geração de hash SHA-256 do arquivo bruto original.
-  - Canvas API / `browser-image-compression`: Conversão e compressão da foto para `.webp` (máx 1200px, ~150KB) ANTES do upload para economizar Supabase Storage e banda.
+  - Canvas API / `browser-image-compression`: Conversão e compressão da foto para `.webp` (máx 1200px, ~150KB) ANTES do upload para economizar armazenamento e banda.
 
 ## 2. Regras Críticas de Escalabilidade (Proteção contra Tráfego Viral)
 1. **Cache Estático na Home (ISR / On-Demand Revalidation):**
    - A página pública (`app/page.tsx`) NÃO deve fazer queries dinâmicas a cada acesso de visitante.
-   - Usar `export const revalidate = 3600;` (cache de 1 hora no CDN da Vercel) e acionar `revalidatePath('/')` via Server Action apenas quando um admin cadastrar um novo preço.
+   - Cache de 1 hora: o projeto usa `cacheComponents` (Next 16), então é `'use cache'` + `cacheLife` + `cacheTag` em `lib/data.ts` — `export const revalidate` é incompatível e quebra o build. As Server Actions do admin chamam `updateTag` e `revalidatePath('/')` ao cadastrar, excluir ou alterar salários.
 2. **Bypass do Limite de Imagens da Vercel:**
-   - Como as imagens já são convertidas para `.webp` leve no momento do upload pelo celular, use `<Image unoptimized />` do Next.js ou `<img>` com `loading="lazy"` e `decoding="async"`. Isso evita estourar a cota de 1.000 otimizações/mês do plano gratuito da Vercel em caso de viralização.
+   - Como as imagens já são convertidas para `.webp` leve no momento do upload pelo celular e servidas direto da URL pública do R2, use `<Image unoptimized />` do Next.js ou `<img>` com `loading="lazy"` e `decoding="async"`. Isso evita estourar a cota de 1.000 otimizações/mês do plano gratuito da Vercel em caso de viralização.
 3. **Paginação na Galeria:**
    - Carregar inicialmente apenas os 12 registros mais recentes na galeria de fotos, com botão "Carregar mais".
 
@@ -27,7 +28,8 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
 2. Calcula o hash `SHA-256` do arquivo original.
 3. Extrai via `exifr`: `DateTimeOriginal`, `Make` (fabricante) e `Model` (modelo do aparelho).
 4. Se não houver EXIF (ex: foto repassada por WhatsApp), exibe um alerta visual avisando o admin que a foto perdeu os metadados originais, mas permite o envio marcando `has_valid_exif = false`.
-5. Somente após extrair o EXIF e o Hash, comprime a imagem para `.webp` e envia para o bucket `price-photos` do Supabase.
+5. Somente após extrair o EXIF e o Hash, comprime a imagem para `.webp` e envia pela Server Action `createPrice`, que confere se é admin e se o hash já existe, grava no Cloudflare R2 como `AAAA-MM/<sha256>.webp` e salva a URL pública (`R2_PUBLIC_URL`) em `photo_url`.
+6. Sem as variáveis do R2 configuradas, o upload falha com erro claro — nunca há modo mock/demo (dados falsos não cabem num site antifraude).
 
 ## 4. Modelagem do Banco de Dados (Supabase SQL)
 
