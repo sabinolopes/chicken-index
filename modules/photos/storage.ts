@@ -34,15 +34,20 @@ function getR2() {
 /** Envia a foto e devolve a URL pública que vai para `photo_url`. */
 export async function uploadPhoto(key: string, photo: File): Promise<string> {
   const r2 = getR2();
-  const response = await r2.client.fetch(r2.objectUrl(key), {
+  const url = r2.objectUrl(key);
+  const body = await photo.arrayBuffer();
+  const signed = await r2.client.sign(url, {
     method: "PUT",
-    body: await photo.arrayBuffer(),
+    body,
     headers: {
       "Content-Type": photo.type,
       // O nome é o hash do original: o conteúdo de uma URL nunca muda.
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
+  // Só assinamos com o aws4fetch e enviamos os bytes nós mesmos: o fetch do Next
+  // reconstrói um Request como stream, sem Content-Length, e o R2 responde 411.
+  const response = await fetch(url, { method: "PUT", headers: signed.headers, body });
   if (!response.ok) throw new Error(`R2 respondeu ${response.status}`);
   return `${r2.publicUrl}/${key}`;
 }
