@@ -6,8 +6,8 @@ import type { Kpis } from "@/lib/stats";
 import type { EconomicSettings } from "@/lib/types";
 import { formatBRL, formatKg, formatPct, formatShortDate } from "@/lib/format";
 
-const W = 1080;
-const H = 1350; // 4:5 — formato de feed do Instagram, também ok no WhatsApp
+const CARD_WIDTH = 1080;
+const CARD_HEIGHT = 1350; // 4:5 — formato de feed do Instagram, também ok no WhatsApp
 
 interface Props {
   kpis: Kpis;
@@ -17,96 +17,96 @@ interface Props {
 }
 
 function drawCard(
-  ctx: CanvasRenderingContext2D,
+  context: CanvasRenderingContext2D,
   { kpis, settings, filterLabel, site }: Omit<Props, "onClose"> & { site: string },
 ) {
   const font = (weight: number, size: number) => `${weight} ${size}px "Geist", Arial, Helvetica, sans-serif`;
   const pad = 88;
 
-  ctx.fillStyle = "#f7f5f1";
-  ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "#b42318";
-  ctx.fillRect(0, 0, W, 16);
+  context.fillStyle = "#f7f5f1";
+  context.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
+  context.fillStyle = "#b42318";
+  context.fillRect(0, 0, CARD_WIDTH, 16);
 
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#b42318";
-  ctx.font = font(700, 30);
-  ctx.fillText("FRANGÔMETRO · PEITO DE FRANGO", pad, 120);
+  context.textBaseline = "alphabetic";
+  context.fillStyle = "#b42318";
+  context.font = font(700, 30);
+  context.fillText("FRANGÔMETRO · PEITO DE FRANGO", pad, 120);
   if (site) {
-    ctx.fillStyle = "#8a847d";
-    ctx.font = font(500, 28);
-    ctx.textAlign = "right";
-    ctx.fillText(site, W - pad, 120);
-    ctx.textAlign = "left";
+    context.fillStyle = "#8a847d";
+    context.font = font(500, 28);
+    context.textAlign = "right";
+    context.fillText(site, CARD_WIDTH - pad, 120);
+    context.textAlign = "left";
   }
 
-  ctx.fillStyle = "#57534e";
-  ctx.font = font(400, 32);
-  ctx.fillText(filterLabel || "Média de todos os mercados monitorados", pad, 170);
+  context.fillStyle = "#57534e";
+  context.font = font(400, 32);
+  context.fillText(filterLabel || "Média de todos os mercados monitorados", pad, 170);
 
-  ctx.fillStyle = "#1c1917";
-  ctx.font = font(500, 36);
-  ctx.fillText("Preço médio do kg hoje (sem promoções)", pad, 290);
-  ctx.font = font(800, 150);
-  ctx.fillText(formatBRL(kpis.currentAvg), pad - 6, 440);
+  context.fillStyle = "#1c1917";
+  context.font = font(500, 36);
+  context.fillText("Preço médio do kg hoje (sem promoções)", pad, 290);
+  context.font = font(800, 150);
+  context.fillText(formatBRL(kpis.currentAvg), pad - 6, 440);
 
   // Variação acumulada
   const up = kpis.accumulatedPct > 0;
-  ctx.fillStyle = up ? "#fde8e7" : "#e7f6ee";
+  context.fillStyle = up ? "#fde8e7" : "#e7f6ee";
   const pillText = `${up ? "▲" : "▼"} ${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)}`;
-  ctx.font = font(700, 40);
-  const pillW = ctx.measureText(pillText).width + 56;
-  ctx.beginPath();
-  ctx.roundRect(pad, 485, pillW, 76, 38);
-  ctx.fill();
-  ctx.fillStyle = up ? "#b42318" : "#047857";
-  ctx.fillText(pillText, pad + 28, 537);
+  context.font = font(700, 40);
+  const pillW = context.measureText(pillText).width + 56;
+  context.beginPath();
+  context.roundRect(pad, 485, pillW, 76, 38);
+  context.fill();
+  context.fillStyle = up ? "#b42318" : "#047857";
+  context.fillText(pillText, pad + 28, 537);
 
-  ctx.fillStyle = "#57534e";
-  ctx.font = font(400, 32);
-  ctx.fillText(`Era ${formatBRL(kpis.firstAvg)} na 1ª semana`, pad, 620);
+  context.fillStyle = "#57534e";
+  context.font = font(400, 32);
+  context.fillText(`Era ${formatBRL(kpis.firstAvg)} na 1ª semana`, pad, 620);
 
   // Termômetro salarial
-  ctx.strokeStyle = "#e7e2da";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(pad, 690);
-  ctx.lineTo(W - pad, 690);
-  ctx.stroke();
+  context.strokeStyle = "#e7e2da";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(pad, 690);
+  context.lineTo(CARD_WIDTH - pad, 690);
+  context.stroke();
 
-  ctx.fillStyle = "#1c1917";
-  ctx.font = font(700, 40);
-  ctx.fillText("Quanto frango o salário compra", pad, 770);
+  context.fillStyle = "#1c1917";
+  context.font = font(700, 40);
+  context.fillText("Quanto frango o salário compra", pad, 770);
 
   const rows = [
     { label: `Salário mínimo (${formatBRL(settings.min_wage)})`, kg: kpis.minWageKg },
     { label: `Salário médio (${formatBRL(settings.avg_wage)})`, kg: kpis.avgWageKg },
   ];
-  rows.forEach(({ label, kg }, i) => {
-    const y = 860 + i * 190;
-    ctx.fillStyle = "#57534e";
-    ctx.font = font(500, 32);
-    ctx.fillText(label, pad, y);
+  rows.forEach(({ label, kg }, index) => {
+    const rowTop = 860 + index * 190;
+    context.fillStyle = "#57534e";
+    context.font = font(500, 32);
+    context.fillText(label, pad, rowTop);
 
-    ctx.fillStyle = "#1c1917";
-    ctx.font = font(800, 64);
+    context.fillStyle = "#1c1917";
+    context.font = font(800, 64);
     const before = `${formatKg(kg.start)} → `;
-    ctx.fillText(before, pad, y + 80);
-    const bw = ctx.measureText(before).width;
-    ctx.fillStyle = "#b42318";
-    ctx.fillText(formatKg(kg.now), pad + bw, y + 80);
+    context.fillText(before, pad, rowTop + 80);
+    const beforeWidth = context.measureText(before).width;
+    context.fillStyle = "#b42318";
+    context.fillText(formatKg(kg.now), pad + beforeWidth, rowTop + 80);
 
-    ctx.fillStyle = "#57534e";
-    ctx.font = font(500, 32);
-    ctx.textAlign = "right";
-    ctx.fillText(formatPct(kg.deltaPct), W - pad, y + 74);
-    ctx.textAlign = "left";
+    context.fillStyle = "#57534e";
+    context.font = font(500, 32);
+    context.textAlign = "right";
+    context.fillText(formatPct(kg.deltaPct), CARD_WIDTH - pad, rowTop + 74);
+    context.textAlign = "left";
   });
 
-  ctx.fillStyle = "#8a847d";
-  ctx.font = font(400, 28);
-  ctx.fillText(`${kpis.records} etiquetas fotografadas · ${kpis.audited} com EXIF auditado + SHA-256`, pad, H - 120);
-  ctx.fillText(`${kpis.weeks} semanas · semana atual: ${formatShortDate(kpis.currentWeek)}`, pad, H - 76);
+  context.fillStyle = "#8a847d";
+  context.font = font(400, 28);
+  context.fillText(`${kpis.records} etiquetas fotografadas · ${kpis.audited} com EXIF auditado + SHA-256`, pad, CARD_HEIGHT - 120);
+  context.fillText(`${kpis.weeks} semanas · semana atual: ${formatShortDate(kpis.currentWeek)}`, pad, CARD_HEIGHT - 76);
 }
 
 export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props) {
@@ -116,14 +116,14 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
   const site = typeof window === "undefined" ? "" : window.location.host;
 
   useEffect(() => {
-    const ctx = canvasRef.current?.getContext("2d");
-    if (!ctx) return;
+    const context = canvasRef.current?.getContext("2d");
+    if (!context) return;
     // Espera a fonte da página para o canvas usar a mesma tipografia.
-    document.fonts.ready.then(() => drawCard(ctx, { kpis, settings, filterLabel, site }));
+    document.fonts.ready.then(() => drawCard(context, { kpis, settings, filterLabel, site }));
   }, [kpis, settings, filterLabel, site]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -132,10 +132,10 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
     canvasRef.current?.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `frangometro-${kpis.currentWeek}.png`;
-      a.click();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `frangometro-${kpis.currentWeek}.png`;
+      link.click();
       URL.revokeObjectURL(url);
     }, "image/png");
   };
@@ -165,7 +165,7 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-title"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -179,8 +179,8 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
         <div className="overflow-y-auto p-4">
           <canvas
             ref={canvasRef}
-            width={W}
-            height={H}
+            width={CARD_WIDTH}
+            height={CARD_HEIGHT}
             className="w-full rounded-lg border border-border"
             role="img"
             aria-label={`Card: preço médio ${formatBRL(kpis.currentAvg)}, variação ${formatPct(kpis.accumulatedPct)}`}

@@ -31,17 +31,17 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
   const [view, setView] = useState<"chart" | "table">("chart");
 
   const brands = useMemo(
-    () => BRANDS.filter((b) => series.some((p) => p.byBrand[b] !== undefined)),
+    () => BRANDS.filter((brand) => series.some((point) => point.byBrand[brand] !== undefined)),
     [series],
   );
 
   const hasPromo = promoSeries.length > 0;
-  const promoByWeek = useMemo(() => new Map(promoSeries.map((p) => [p.week, p])), [promoSeries]);
+  const promoByWeek = useMemo(() => new Map(promoSeries.map((point) => [point.week, point])), [promoSeries]);
 
   // Semanas com só promoção também viram linha (sem média geral nelas).
   const rows = useMemo(() => {
-    const weeks = [...new Set([...series.map((p) => p.week), ...promoSeries.map((p) => p.week)])].sort();
-    const byWeek = new Map(series.map((p) => [p.week, p]));
+    const weeks = [...new Set([...series.map((point) => point.week), ...promoSeries.map((point) => point.week)])].sort();
+    const byWeek = new Map(series.map((point) => [point.week, point]));
     return weeks.map((week) => {
       const regular = byWeek.get(week);
       return {
@@ -56,14 +56,14 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
 
   // Eixo Y com passo inteiro e uniforme (o automático do Recharts pula valores).
   const yAxis = useMemo(() => {
-    const values = rows.flatMap((r) => Object.values(r).filter((v): v is number => typeof v === "number"));
+    const values = rows.flatMap((row) => Object.values(row).filter((value): value is number => typeof value === "number"));
     if (values.length === 0) return { domain: [0, 1] as [number, number], ticks: [0, 1] };
     const step = Math.max(...values) - Math.min(...values) > 6 ? 2 : 1;
-    const lo = Math.floor((Math.min(...values) - 0.5) / step) * step;
-    const hi = Math.ceil((Math.max(...values) + 0.5) / step) * step;
+    const lowerBound = Math.floor((Math.min(...values) - 0.5) / step) * step;
+    const upperBound = Math.ceil((Math.max(...values) + 0.5) / step) * step;
     const ticks: number[] = [];
-    for (let t = lo; t <= hi; t += step) ticks.push(t);
-    return { domain: [lo, hi] as [number, number], ticks };
+    for (let tick = lowerBound; tick <= upperBound; tick += step) ticks.push(tick);
+    return { domain: [lowerBound, upperBound] as [number, number], ticks };
   }, [rows]);
 
   return (
@@ -90,8 +90,8 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
 
       <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted" aria-label="Legenda">
         <LegendItem color="var(--series-avg)" label={AVG_KEY} thick />
-        {brands.map((b) => (
-          <LegendItem key={b} color={BRAND_COLORS[b]} label={b} />
+        {brands.map((brand) => (
+          <LegendItem key={brand} color={BRAND_COLORS[brand]} label={brand} />
         ))}
         {hasPromo && <LegendItem color="var(--series-promo)" label={PROMO_KEY} dashed />}
       </ul>
@@ -111,19 +111,19 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
                 domain={yAxis.domain}
                 ticks={yAxis.ticks}
                 interval={0}
-                tickFormatter={(v: number) => `R$ ${v}`}
+                tickFormatter={(value: number) => `R$ ${value}`}
                 tick={{ fill: "var(--subtle)", fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
                 width={56}
               />
               <Tooltip content={(props) => <ChartTooltip {...props} />} cursor={{ stroke: "var(--subtle)", strokeDasharray: "3 3" }} />
-              {brands.map((b) => (
+              {brands.map((brand) => (
                 <Line
-                  key={b}
+                  key={brand}
                   type="monotone"
-                  dataKey={b}
-                  stroke={BRAND_COLORS[b]}
+                  dataKey={brand}
+                  stroke={BRAND_COLORS[brand]}
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
@@ -160,9 +160,9 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
               <tr className="border-b border-border text-left text-muted">
                 <th className="py-2 pr-4 font-medium">Semana</th>
                 <th className="py-2 pr-4 font-medium text-right">{AVG_KEY}</th>
-                {brands.map((b) => (
-                  <th key={b} className="py-2 pr-4 font-medium text-right">
-                    {b}
+                {brands.map((brand) => (
+                  <th key={brand} className="py-2 pr-4 font-medium text-right">
+                    {brand}
                   </th>
                 ))}
                 {hasPromo && <th className="py-2 pr-4 font-medium text-right">Promoções</th>}
@@ -171,15 +171,15 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
             </thead>
             <tbody>
               {rows.map((row) => {
-                const regular = series.find((p) => p.week === row.week);
+                const regular = series.find((point) => point.week === row.week);
                 const promo = promoByWeek.get(row.week);
                 return (
                   <tr key={row.week} className="border-b border-border/60">
                     <td className="py-2 pr-4">{row.label}</td>
                     <td className="py-2 pr-4 text-right font-semibold">{regular ? formatBRL(regular.average) : "—"}</td>
-                    {brands.map((b) => (
-                      <td key={b} className="py-2 pr-4 text-right">
-                        {regular?.byBrand[b] !== undefined ? formatBRL(regular.byBrand[b]) : "—"}
+                    {brands.map((brand) => (
+                      <td key={brand} className="py-2 pr-4 text-right">
+                        {regular?.byBrand[brand] !== undefined ? formatBRL(regular.byBrand[brand]) : "—"}
                       </td>
                     ))}
                     {hasPromo && (
@@ -199,7 +199,8 @@ export function PriceChart({ series, promoSeries }: { series: WeeklyPoint[]; pro
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload?.length) return null;
-  const sorted = [...payload].sort((a, b) => (a.dataKey === AVG_KEY ? -1 : b.dataKey === AVG_KEY ? 1 : 0));
+  // A média vem primeiro; as marcas mantêm a ordem do gráfico.
+  const sorted = [...payload].sort((first, second) => Number(second.dataKey === AVG_KEY) - Number(first.dataKey === AVG_KEY));
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-lg">
       <p className="mb-1 font-medium">Semana de {label}</p>

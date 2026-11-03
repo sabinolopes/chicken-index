@@ -11,15 +11,15 @@ export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total:
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  function remove(p: ChickenPrice) {
-    if (!confirm(`Excluir ${p.brand} ${formatBRL(p.price_per_kg)}/kg em ${p.market_name} (${formatDate(p.recorded_at)})? A foto também será apagada.`)) {
+  function remove(price: ChickenPrice) {
+    if (!confirm(`Excluir ${price.brand} ${formatBRL(price.price_per_kg)}/kg em ${price.market_name} (${formatDate(price.recorded_at)})? A foto também será apagada.`)) {
       return;
     }
     setError(null);
-    setPendingId(p.id);
+    setPendingId(price.id);
     startTransition(async () => {
-      const res = await deletePrice(p.id);
-      if (!res.ok) setError(res.error);
+      const result = await deletePrice(price.id);
+      if (!result.ok) setError(result.error);
       setPendingId(null);
     });
   }
@@ -44,38 +44,38 @@ export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total:
         <p className="p-6 text-center text-sm text-muted">Nenhum preço cadastrado ainda.</p>
       ) : (
         <ul className="divide-y divide-border">
-          {prices.map((p) => (
-            <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+          {prices.map((price) => (
+            <li key={price.id} className="flex items-center gap-3 px-4 py-3">
               {/* eslint-disable-next-line @next/next/no-img-element -- miniatura .webp já leve */}
-              <img src={p.photo_url} alt="" loading="lazy" decoding="async" className="size-12 shrink-0 rounded-md bg-stone-200 object-cover" />
+              <img src={price.photo_url} alt="" loading="lazy" decoding="async" className="size-12 shrink-0 rounded-md bg-stone-200 object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5">
-                  <span className="font-semibold tabular">{formatBRL(p.price_per_kg)}</span>
-                  <span className="text-sm text-muted">{p.brand}</span>
-                  {p.price_kind !== "regular" && (
+                  <span className="font-semibold tabular">{formatBRL(price.price_per_kg)}</span>
+                  <span className="text-sm text-muted">{price.brand}</span>
+                  {price.price_kind !== "regular" && (
                     <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-800">
-                      {PRICE_KIND_LABEL[p.price_kind]}
+                      {PRICE_KIND_LABEL[price.price_kind]}
                     </span>
                   )}
-                  {p.has_valid_exif ? (
+                  {price.has_valid_exif ? (
                     <BadgeCheck className="size-4 text-emerald-700" aria-label="EXIF auditado" />
                   ) : (
                     <TriangleAlert className="size-4 text-amber-700" aria-label="Sem EXIF" />
                   )}
                 </p>
                 <p className="truncate text-xs text-subtle">
-                  {p.market_name} · {p.city}/{p.state} · {formatDate(p.recorded_at)}
+                  {price.market_name} · {price.city}/{price.state} · {formatDate(price.recorded_at)}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => remove(p)}
+                onClick={() => remove(price)}
                 disabled={pendingId !== null}
-                aria-label={`Excluir registro de ${p.market_name}`}
+                aria-label={`Excluir registro de ${price.market_name}`}
                 title="Excluir"
                 className="rounded-lg p-2 text-subtle hover:bg-red-50 hover:text-red-700 disabled:opacity-30 disabled:hover:bg-transparent"
               >
-                {pendingId === p.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                {pendingId === price.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
               </button>
             </li>
           ))}

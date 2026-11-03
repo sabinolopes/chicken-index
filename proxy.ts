@@ -1,14 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAdminUser } from "@/lib/admin-role";
-import { getSupabaseEnv } from "@/lib/supabase/config";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 
 /**
  * Renova a sessão do Supabase e faz a checagem otimista de login em /admin.
  * A autorização de verdade é refeita em cada página e Server Action (lib/auth.ts).
  */
 export async function proxy(request: NextRequest) {
-  const { url, anonKey } = getSupabaseEnv();
+  const { url, anonKey } = getSupabaseConfig();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(url, anonKey, {

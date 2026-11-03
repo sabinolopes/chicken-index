@@ -19,12 +19,12 @@ export async function listAdmins(): Promise<AdminListItem[]> {
 
   return data.users
     .filter(isAdminUser)
-    .map((u) => ({
-      id: u.id,
-      email: u.email ?? "(sem e-mail)",
-      pending: !u.last_sign_in_at,
-      invitedAt: u.invited_at ?? null,
-      lastSignInAt: u.last_sign_in_at ?? null,
+    .map((user) => ({
+      id: user.id,
+      email: user.email ?? "(sem e-mail)",
+      pending: !user.last_sign_in_at,
+      invitedAt: user.invited_at ?? null,
+      lastSignInAt: user.last_sign_in_at ?? null,
     }))
-    .sort((a, b) => a.email.localeCompare(b.email));
+    .sort((first, second) => first.email.localeCompare(second.email));
 }

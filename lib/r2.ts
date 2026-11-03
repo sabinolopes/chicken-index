@@ -27,7 +27,7 @@ function getR2() {
 /** Envia a foto e devolve a URL pública que vai para `photo_url`. */
 export async function uploadPhoto(key: string, photo: File): Promise<string> {
   const r2 = getR2();
-  const res = await r2.client.fetch(r2.objectUrl(key), {
+  const response = await r2.client.fetch(r2.objectUrl(key), {
     method: "PUT",
     body: await photo.arrayBuffer(),
     headers: {
@@ -36,14 +36,14 @@ export async function uploadPhoto(key: string, photo: File): Promise<string> {
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
-  if (!res.ok) throw new Error(`R2 respondeu ${res.status}`);
+  if (!response.ok) throw new Error(`R2 respondeu ${response.status}`);
   return `${r2.publicUrl}/${key}`;
 }
 
 export async function deletePhoto(key: string): Promise<void> {
   const r2 = getR2();
-  const res = await r2.client.fetch(r2.objectUrl(key), { method: "DELETE" });
-  if (!res.ok && res.status !== 404) throw new Error(`R2 respondeu ${res.status}`);
+  const response = await r2.client.fetch(r2.objectUrl(key), { method: "DELETE" });
+  if (!response.ok && response.status !== 404) throw new Error(`R2 respondeu ${response.status}`);
 }
 
 /** Chave do objeto a partir da URL salva (`AAAA-MM/<sha256>.webp`); null se for de outro lugar. */

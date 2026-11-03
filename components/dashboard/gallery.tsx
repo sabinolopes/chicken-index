@@ -36,41 +36,41 @@ export function Gallery({ prices }: { prices: ChickenPrice[] }) {
         </p>
       ) : (
         <ul className="mt-4 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {shown.map((p) => (
-            <li key={p.id}>
+          {shown.map((price) => (
+            <li key={price.id}>
               <button
                 type="button"
-                onClick={() => setSelected(p)}
+                onClick={() => setSelected(price)}
                 className="group block w-full overflow-hidden rounded-xl border border-border bg-surface text-left transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-stone-200">
                   {/* eslint-disable-next-line @next/next/no-img-element -- fotos já chegam em .webp leve; evita a cota de otimização da Vercel */}
                   <img
-                    src={p.photo_url}
-                    alt={`Etiqueta ${p.brand} a ${formatBRL(p.price_per_kg)}/kg em ${p.market_name}`}
+                    src={price.photo_url}
+                    alt={`Etiqueta ${price.brand} a ${formatBRL(price.price_per_kg)}/kg em ${price.market_name}`}
                     loading="lazy"
                     decoding="async"
                     className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  {p.price_kind !== "regular" && (
-                    <PriceKindBadge kind={p.price_kind} className="absolute left-2 top-2 shadow-sm" />
+                  {price.price_kind !== "regular" && (
+                    <PriceKindBadge kind={price.price_kind} className="absolute left-2 top-2 shadow-sm" />
                   )}
                   <span className="absolute right-2 top-2 rounded-lg bg-foreground/90 px-2 py-1 text-lg font-bold text-white tabular">
-                    {formatBRL(p.price_per_kg)}
+                    {formatBRL(price.price_per_kg)}
                     <span className="text-xs font-medium">/kg</span>
                   </span>
                 </div>
                 <div className="space-y-1.5 p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">{p.brand}</span>
-                    <span className="text-xs text-subtle capitalize">{p.state_type}</span>
+                    <span className="font-semibold">{price.brand}</span>
+                    <span className="text-xs text-subtle capitalize">{price.state_type}</span>
                   </div>
-                  <p className="truncate text-sm text-muted">{p.market_name}</p>
+                  <p className="truncate text-sm text-muted">{price.market_name}</p>
                   <p className="flex items-center gap-1 text-xs text-subtle">
                     <MapPin className="size-3.5 shrink-0" aria-hidden />
-                    {p.city}/{p.state} · {formatDate(p.recorded_at)}
+                    {price.city}/{price.state} · {formatDate(price.recorded_at)}
                   </p>
-                  <AuditBadge audited={p.has_valid_exif} />
+                  <AuditBadge audited={price.has_valid_exif} />
                 </div>
               </button>
             </li>
@@ -82,7 +82,7 @@ export function Gallery({ prices }: { prices: ChickenPrice[] }) {
         <div className="mt-5 flex justify-center">
           <button
             type="button"
-            onClick={() => setVisible((v) => v + PAGE_SIZE)}
+            onClick={() => setVisible((currentVisible) => currentVisible + PAGE_SIZE)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:border-stone-400"
           >
             <ChevronDown className="size-4" aria-hidden />

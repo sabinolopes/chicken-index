@@ -60,8 +60,8 @@ export function SetPasswordForm() {
     sessionFromLink().then(setStatus);
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError(null);
     if (password.length < MIN_LENGTH) return setError(`A senha precisa ter pelo menos ${MIN_LENGTH} caracteres.`);
     if (password !== confirmation) return setError("As senhas não conferem.");
@@ -119,7 +119,7 @@ export function SetPasswordForm() {
           minLength={MIN_LENGTH}
           required
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
           className={inputClass}
         />
       </div>
@@ -134,7 +134,7 @@ export function SetPasswordForm() {
           minLength={MIN_LENGTH}
           required
           value={confirmation}
-          onChange={(e) => setConfirmation(e.target.value)}
+          onChange={(event) => setConfirmation(event.target.value)}
           className={inputClass}
         />
       </div>

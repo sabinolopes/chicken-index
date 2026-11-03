@@ -28,7 +28,7 @@ export async function getAdminData(limit = 50): Promise<{
   if (recent.error) throw new Error(recent.error.message);
 
   return {
-    prices: (recent.data ?? []).map((r) => ({ ...r, price_per_kg: Number(r.price_per_kg) })) as ChickenPrice[],
+    prices: (recent.data ?? []).map((row) => ({ ...row, price_per_kg: Number(row.price_per_kg) })) as ChickenPrice[],
     total: recent.count ?? 0,
     settings: settings.data
       ? { min_wage: Number(settings.data.min_wage), avg_wage: Number(settings.data.avg_wage), updated_at: settings.data.updated_at }
@@ -39,8 +39,8 @@ export async function getAdminData(limit = 50): Promise<{
 
 function uniquePlaces(rows: MarketSuggestion[]) {
   const seen = new Map<string, MarketSuggestion>();
-  for (const r of rows) {
-    if (!seen.has(r.market_name)) seen.set(r.market_name, { market_name: r.market_name, city: r.city, state: r.state });
+  for (const row of rows) {
+    if (!seen.has(row.market_name)) seen.set(row.market_name, { market_name: row.market_name, city: row.city, state: row.state });
   }
-  return [...seen.values()].sort((a, b) => a.market_name.localeCompare(b.market_name, "pt-BR"));
+  return [...seen.values()].sort((first, second) => first.market_name.localeCompare(second.market_name, "pt-BR"));
 }

@@ -30,10 +30,10 @@ export function PhotoModal({ price, onClose }: { price: ChickenPrice; onClose: (
   const frameRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "+" || e.key === "=") setZoom((z) => Math.min(MAX_ZOOM, z + 0.5));
-      if (e.key === "-") setZoom((z) => Math.max(MIN_ZOOM, z - 0.5));
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "+" || event.key === "=") setZoom((currentZoom) => Math.min(MAX_ZOOM, currentZoom + 0.5));
+      if (event.key === "-") setZoom((currentZoom) => Math.max(MIN_ZOOM, currentZoom - 0.5));
     };
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -74,7 +74,7 @@ export function PhotoModal({ price, onClose }: { price: ChickenPrice; onClose: (
         role="dialog"
         aria-modal="true"
         aria-labelledby="photo-modal-title"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         className="flex max-h-[100dvh] sm:max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-surface shadow-2xl lg:flex-row"
       >
         {/* Foto com lupa */}
@@ -83,16 +83,16 @@ export function PhotoModal({ price, onClose }: { price: ChickenPrice; onClose: (
             ref={frameRef}
             className={`relative aspect-[4/3] w-full overflow-hidden lg:aspect-auto lg:flex-1 ${zoomed ? "cursor-zoom-out" : "cursor-zoom-in"}`}
             style={{ touchAction: zoomed ? "none" : "manipulation" }}
-            onClick={(e) => {
+            onClick={(event) => {
               if (zoomed) {
                 setZoom(1);
               } else {
-                setOrigin(pointerToOrigin(e.clientX, e.clientY));
+                setOrigin(pointerToOrigin(event.clientX, event.clientY));
                 setZoom(CLICK_ZOOM);
               }
             }}
-            onPointerMove={(e) => {
-              if (zoomed) setOrigin(pointerToOrigin(e.clientX, e.clientY));
+            onPointerMove={(event) => {
+              if (zoomed) setOrigin(pointerToOrigin(event.clientX, event.clientY));
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- foto .webp já otimizada no upload */}
@@ -111,11 +111,11 @@ export function PhotoModal({ price, onClose }: { price: ChickenPrice; onClose: (
               {zoomed ? "Mova o cursor / arraste para explorar" : "Clique ou toque na etiqueta para ampliar"}
             </span>
             <div className="flex items-center gap-1">
-              <IconButton label="Diminuir zoom" onClick={() => setZoom((z) => Math.max(MIN_ZOOM, z - 0.5))} disabled={zoom <= MIN_ZOOM}>
+              <IconButton label="Diminuir zoom" onClick={() => setZoom((currentZoom) => Math.max(MIN_ZOOM, currentZoom - 0.5))} disabled={zoom <= MIN_ZOOM}>
                 <ZoomOut className="size-4" />
               </IconButton>
               <span className="w-12 text-center text-xs tabular">{Math.round(zoom * 100)}%</span>
-              <IconButton label="Aumentar zoom" onClick={() => setZoom((z) => Math.min(MAX_ZOOM, z + 0.5))} disabled={zoom >= MAX_ZOOM}>
+              <IconButton label="Aumentar zoom" onClick={() => setZoom((currentZoom) => Math.min(MAX_ZOOM, currentZoom + 0.5))} disabled={zoom >= MAX_ZOOM}>
                 <ZoomIn className="size-4" />
               </IconButton>
               <IconButton

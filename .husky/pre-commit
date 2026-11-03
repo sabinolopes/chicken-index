@@ -1,0 +1,5 @@
+# Nada entra no repositório com erro de tipo, aviso de lint ou teste quebrado.
+# Chama os binários direto pelo node (funciona mesmo com o npm global quebrado).
+node node_modules/typescript/bin/tsc --noEmit
+node node_modules/eslint/bin/eslint.js . --max-warnings 0
+node node_modules/vitest/vitest.mjs run

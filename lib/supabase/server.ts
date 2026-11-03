@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { getSupabaseEnv } from "./config";
+import { getSupabaseConfig } from "./config";
 
 /**
  * Cliente com a sessão do admin (cookies). Lê dados da requisição, então só pode
@@ -11,7 +11,7 @@ export async function createServerSupabase() {
   // O cliente lê o relógio (expiração do token): marca a renderização como
   // de requisição antes disso, exigência do Cache Components.
   await connection();
-  const { url, anonKey } = getSupabaseEnv();
+  const { url, anonKey } = getSupabaseConfig();
   const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {

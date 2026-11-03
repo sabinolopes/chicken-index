@@ -67,3 +67,29 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
 2. **Área Admin (`/admin` e `/admin/login`):**
    - Login simples com Supabase Auth.
    - Formulário Mobile-First focado em rapidez no mercado: selecionar foto, pré-preenchimento automático da data via EXIF, input de preço por kg, seletor de marca, mercado e cidade.
+## 6. Padrões de Código (inspirados no guia Gotenks)
+
+> "A máquina compila qualquer código que funcione; humanos precisam entender esse código para dar manutenção."
+
+Toda entrega tem duas etapas: **(1) faça funcionar, com testes reais e segurança desde a primeira linha; (2) refatore para a menor complexidade possível.** Não deixe qualidade nem segurança para depois.
+
+### Regras que o lint garante (`eslint.config.mjs`, zero avisos)
+- **Return early:** validações negativas no topo, caminho feliz sem indentação. Proibido `else` depois de `return` (`no-else-return`), `if` sozinho dentro de `else` (`no-lonely-if`) e mais de 2 níveis de bloco (`max-depth`).
+- **Sem ternário dentro de ternário** (`sonarjs/no-nested-conditional`): use uma função com guard clauses ou um mapa (`Record<Tipo, valor>`).
+- **Complexidade cognitiva máxima 12** por função (`sonarjs/cognitive-complexity`): passou disso, fatie em funções com nome descritivo.
+- **Máximo de 3 parâmetros** (`max-params`); acima disso, um objeto desestruturado.
+- **Sem abreviações** (`unicorn/prevent-abbreviations` + `id-length`): `event` e não `e`, `error` e não `err`, `response`/`result` e não `res`, `price` e não `p`, `context` e não `ctx`. Exceções: termos do domínio (`uf`, `kg`) e `ref` do React (`cameraRef`).
+- **Sem `../`**: importe pelo alias `@/` (`no-restricted-imports`). `./` só para arquivos da mesma pasta.
+
+### Regras de convenção (revisão humana)
+- **Comentários em pt-BR**, explicando o porquê, não o quê.
+- **Operadores nullish:** `?.` e `??` quando `0`, `false` ou `""` são valores válidos; `||` quando qualquer valor falsy deve cair no padrão.
+- **Interface não busca dados:** componentes não chamam Supabase nem `fetch`. Leitura em `lib/data.ts` / `lib/admin-data.ts`, escrita em Server Actions (`app/admin/actions.ts`), infraestrutura em `lib/supabase/*` e `lib/r2.ts`.
+- **Validação sempre no servidor** (`lib/validation.ts`), mesmo que o cliente já valide. Nunca confie em ID ou role vindos do cliente: a role de admin vem do `app_metadata` (definido só pelo servidor) e as escritas passam por `requireAdmin()` + RLS.
+- **Falhe de forma segura:** erro de configuração ou de integração bloqueia o fluxo com mensagem clara; nunca há modo mock/demo nem fallback que finja sucesso.
+- **Nada sensível em logs ou respostas:** sem chaves, tokens ou dados pessoais em mensagens de erro.
+
+### Testes (Vitest, `*.test.ts` ao lado do código)
+- **Zero testes falsos:** todo teste exercita regra de negócio real com asserções significativas (nada de `expect(true).toBe(true)` ou teste que só instancia).
+- **Bug corrigido = teste que reproduz o bug primeiro**, depois a correção.
+- Antes de concluir, rode `npm run check` (tipos + lint sem avisos + testes). O hook de pré-commit (`.husky/pre-commit`) roda o mesmo e bloqueia o commit se algo falhar.

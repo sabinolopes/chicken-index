@@ -2,9 +2,23 @@ import { BadgeCheck, CalendarDays, Minus, TrendingDown, TrendingUp } from "lucid
 import type { Kpis } from "@/lib/stats";
 import { formatBRL, formatPct, formatShortDate } from "@/lib/format";
 
+// Abaixo de 0,05% a variação é tratada como estável.
+const STABLE_THRESHOLD = 0.05;
+
+const TRENDS = {
+  up: { Icon: TrendingUp, tone: "text-red-700 bg-red-50", label: "alta" },
+  down: { Icon: TrendingDown, tone: "text-emerald-700 bg-emerald-50", label: "queda" },
+  stable: { Icon: Minus, tone: "text-muted bg-stone-100", label: "estável" },
+} as const;
+
+function trendOf(pct: number) {
+  if (pct > STABLE_THRESHOLD) return TRENDS.up;
+  if (pct < -STABLE_THRESHOLD) return TRENDS.down;
+  return TRENDS.stable;
+}
+
 function Trend({ pct, label }: { pct: number; label: string }) {
-  const Icon = pct > 0.05 ? TrendingUp : pct < -0.05 ? TrendingDown : Minus;
-  const tone = pct > 0.05 ? "text-red-700 bg-red-50" : pct < -0.05 ? "text-emerald-700 bg-emerald-50" : "text-muted bg-stone-100";
+  const { Icon, tone } = trendOf(pct);
   return (
     <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ${tone}`}>
       <Icon className="size-3.5" aria-hidden />
@@ -27,7 +41,7 @@ export function KpiCards({ kpis }: { kpis: Kpis }) {
       <Tile label="Variação acumulada">
         <p className="text-3xl sm:text-4xl font-bold tracking-tight tabular">{formatPct(kpis.accumulatedPct)}</p>
         <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
-          <Trend pct={kpis.accumulatedPct} label={kpis.accumulatedPct > 0 ? "alta" : kpis.accumulatedPct < 0 ? "queda" : "estável"} />
+          <Trend pct={kpis.accumulatedPct} label={trendOf(kpis.accumulatedPct).label} />
           desde {formatShortDate(kpis.firstWeek)} ({formatBRL(kpis.firstAvg)})
         </p>
       </Tile>

@@ -33,25 +33,25 @@ export async function sha256Hex(buffer: ArrayBuffer) {
     throw new Error("Este navegador não liberou a Web Crypto API. Acesse o site por HTTPS (ou localhost) para calcular o hash.");
   }
   const digest = await crypto.subtle.digest("SHA-256", buffer);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function formatDevice(make?: unknown, model?: unknown) {
-  const mk = typeof make === "string" ? make.trim() : "";
-  const md = typeof model === "string" ? model.trim() : "";
-  if (!mk && !md) return null;
-  const brand = mk ? mk.charAt(0).toUpperCase() + mk.slice(1).toLowerCase() : "";
+export function formatDevice(make?: unknown, model?: unknown) {
+  const maker = typeof make === "string" ? make.trim() : "";
+  const modelName = typeof model === "string" ? model.trim() : "";
+  if (!maker && !modelName) return null;
+  const brand = maker ? maker.charAt(0).toUpperCase() + maker.slice(1).toLowerCase() : "";
   // "Apple" + "iPhone 13" → "Apple iPhone 13"; evita "Samsung Samsung SM-…"
-  return md.toLowerCase().startsWith(mk.toLowerCase()) ? md : `${brand} ${md}`.trim();
+  return modelName.toLowerCase().startsWith(maker.toLowerCase()) ? modelName : `${brand} ${modelName}`.trim();
 }
 
 export async function readExif(buffer: ArrayBuffer): Promise<PhotoExif> {
   try {
     const { default: exifr } = await import("exifr"); // carregado só quando há foto
     const tags = await exifr.parse(buffer, { pick: ["DateTimeOriginal", "Make", "Model"] });
-    const dt = tags?.DateTimeOriginal;
+    const exifDate = tags?.DateTimeOriginal;
     return {
-      datetime: dt instanceof Date && !Number.isNaN(dt.getTime()) ? dt : null,
+      datetime: exifDate instanceof Date && !Number.isNaN(exifDate.getTime()) ? exifDate : null,
       device: formatDevice(tags?.Make, tags?.Model),
     };
   } catch {
@@ -76,10 +76,10 @@ async function loadImage(file: Blob): Promise<{ source: CanvasImageSource; width
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = reject;
-      el.src = url;
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = url;
     });
     return { source: img, width: img.naturalWidth, height: img.naturalHeight };
   } catch {
@@ -102,9 +102,9 @@ export async function compressImage(file: Blob) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas indisponível neste navegador.");
-  ctx.drawImage(img.source, 0, 0, width, height);
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas indisponível neste navegador.");
+  context.drawImage(img.source, 0, 0, width, height);
   if (img.source instanceof ImageBitmap) img.source.close();
 
   const probe = await toBlob(canvas, "image/webp", 0.8);
@@ -148,6 +148,6 @@ export async function processPhoto(file: File, onStep?: (step: ProcessStep) => v
 
 /** Data local (YYYY-MM-DD) de um Date, sem conversão para UTC. */
 export function localIsoDate(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
+  const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }

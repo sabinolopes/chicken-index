@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { getSupabaseEnv } from "./config";
+import { getSupabaseConfig } from "./config";
 
 /**
  * Cliente com a service role: ignora RLS e acessa a API de admin do Auth (convites,
@@ -8,7 +8,7 @@ import { getSupabaseEnv } from "./config";
  * pode ter prefixo NEXT_PUBLIC_.
  */
 export function createAdminSupabase() {
-  const { url } = getSupabaseEnv();
+  const { url } = getSupabaseConfig();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!serviceKey) {
     throw new Error("Defina SUPABASE_SERVICE_ROLE_KEY (.env.local ou variáveis da Vercel) para gerenciar admins.");

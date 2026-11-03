@@ -13,7 +13,7 @@ export interface FilterState {
 
 export const EMPTY_FILTERS: FilterState = { state: "", city: "", market: "", brand: "" };
 
-const uniqueSorted = (values: string[]) => [...new Set(values)].sort((a, b) => a.localeCompare(b, "pt-BR"));
+const uniqueSorted = (values: string[]) => [...new Set(values)].sort((first, second) => first.localeCompare(second, "pt-BR"));
 
 interface Props {
   prices: ChickenPrice[];
@@ -24,13 +24,13 @@ interface Props {
 
 export function Filters({ prices, value, onChange, resultCount }: Props) {
   const options = useMemo(() => {
-    const inState = prices.filter((p) => !value.state || p.state === value.state);
-    const inCity = inState.filter((p) => !value.city || p.city === value.city);
+    const inState = prices.filter((price) => !value.state || price.state === value.state);
+    const inCity = inState.filter((price) => !value.city || price.city === value.city);
     return {
-      states: uniqueSorted(prices.map((p) => p.state)),
-      cities: uniqueSorted(inState.map((p) => p.city)),
-      markets: uniqueSorted(inCity.map((p) => p.market_name)),
-      brands: uniqueSorted(prices.map((p) => p.brand)),
+      states: uniqueSorted(prices.map((price) => price.state)),
+      cities: uniqueSorted(inState.map((price) => price.city)),
+      markets: uniqueSorted(inCity.map((price) => price.market_name)),
+      brands: uniqueSorted(prices.map((price) => price.brand)),
     };
   }, [prices, value.state, value.city]);
 
@@ -129,15 +129,15 @@ function Select({
       {icon && <span className="pointer-events-none absolute left-2.5 text-subtle">{icon}</span>}
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         className={`w-full lg:w-auto rounded-lg border border-border bg-surface py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-stone-400 ${
           icon ? "pl-8" : "pl-3"
         }`}
       >
         <option value="">{allLabel}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
           </option>
         ))}
       </select>

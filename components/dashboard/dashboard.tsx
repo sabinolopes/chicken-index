@@ -12,6 +12,13 @@ import { PriceChart } from "./price-chart";
 import { Gallery } from "./gallery";
 import { ShareCardDialog } from "./share-card";
 
+/** Por que não há indicadores: banco vazio, recorte só com promoções ou filtro sem resultado. */
+function emptyMessage(totalCount: number, filteredCount: number) {
+  if (totalCount === 0) return "Ainda não há preços cadastrados. O primeiro registro aparece aqui assim que for publicado.";
+  if (filteredCount > 0) return "Neste recorte só há preços promocionais (oferta ou clube), que ficam fora do índice. Veja as fotos abaixo.";
+  return "Nenhum registro encontrado para os filtros selecionados.";
+}
+
 export function Dashboard({ data }: { data: DashboardData }) {
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [shareOpen, setShareOpen] = useState(false);
@@ -19,17 +26,17 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const filtered = useMemo(
     () =>
       data.prices.filter(
-        (p) =>
-          (!filters.state || p.state === filters.state) &&
-          (!filters.city || p.city === filters.city) &&
-          (!filters.market || p.market_name === filters.market) &&
-          (!filters.brand || p.brand === filters.brand),
+        (price) =>
+          (!filters.state || price.state === filters.state) &&
+          (!filters.city || price.city === filters.city) &&
+          (!filters.market || price.market_name === filters.market) &&
+          (!filters.brand || price.brand === filters.brand),
       ),
     [data.prices, filters],
   );
 
   const series = useMemo(() => weeklySeries(filtered.filter(isIndexPrice)), [filtered]);
-  const promoSeries = useMemo(() => weeklySeries(filtered.filter((p) => !isIndexPrice(p))), [filtered]);
+  const promoSeries = useMemo(() => weeklySeries(filtered.filter((price) => !isIndexPrice(price))), [filtered]);
   const kpis = useMemo(() => computeKpis(filtered, data.settings), [filtered, data.settings]);
   const filterKey = `${filters.state}|${filters.city}|${filters.market}|${filters.brand}`;
   const filterLabel = [filters.brand, filters.market, filters.city || filters.state].filter(Boolean).join(" · ");
@@ -72,11 +79,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
           </>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center text-muted">
-            {data.prices.length === 0
-              ? "Ainda não há preços cadastrados. O primeiro registro aparece aqui assim que for publicado."
-              : filtered.length > 0
-                ? "Neste recorte só há preços promocionais (oferta ou clube), que ficam fora do índice. Veja as fotos abaixo."
-                : "Nenhum registro encontrado para os filtros selecionados."}
+            {emptyMessage(data.prices.length, filtered.length)}
           </div>
         )}
 

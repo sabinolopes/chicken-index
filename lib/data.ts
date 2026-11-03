@@ -21,7 +21,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const generatedAt = new Date().toISOString();
 
   const supabase = createPublicClient();
-  const [pricesRes, settingsRes] = await Promise.all([
+  const [pricesResponse, settingsResponse] = await Promise.all([
     supabase
       .from("chicken_prices")
       .select(PRICE_COLUMNS)
@@ -30,19 +30,19 @@ export async function getDashboardData(): Promise<DashboardData> {
     supabase.from("economic_settings").select("min_wage, avg_wage, updated_at").eq("id", 1).maybeSingle(),
   ]);
 
-  if (pricesRes.error) throw new Error(`Falha ao carregar preços: ${pricesRes.error.message}`);
-  if (settingsRes.error) throw new Error(`Falha ao carregar configurações: ${settingsRes.error.message}`);
+  if (pricesResponse.error) throw new Error(`Falha ao carregar preços: ${pricesResponse.error.message}`);
+  if (settingsResponse.error) throw new Error(`Falha ao carregar configurações: ${settingsResponse.error.message}`);
 
-  const prices: ChickenPrice[] = (pricesRes.data ?? []).map((row) => ({
+  const prices: ChickenPrice[] = (pricesResponse.data ?? []).map((row) => ({
     ...row,
     price_per_kg: Number(row.price_per_kg),
   })) as ChickenPrice[];
 
-  const settings: EconomicSettings = settingsRes.data
+  const settings: EconomicSettings = settingsResponse.data
     ? {
-        min_wage: Number(settingsRes.data.min_wage),
-        avg_wage: Number(settingsRes.data.avg_wage),
-        updated_at: settingsRes.data.updated_at,
+        min_wage: Number(settingsResponse.data.min_wage),
+        avg_wage: Number(settingsResponse.data.avg_wage),
+        updated_at: settingsResponse.data.updated_at,
       }
     : DEFAULT_SETTINGS;
 

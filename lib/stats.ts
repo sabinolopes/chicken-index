@@ -26,36 +26,36 @@ export interface Kpis {
 
 /** Segunda-feira da semana de uma data ISO (YYYY-MM-DD). */
 export function weekStart(isoDate: string) {
-  const d = new Date(`${isoDate}T12:00:00Z`);
-  const day = d.getUTCDay(); // 0 = domingo
-  d.setUTCDate(d.getUTCDate() - ((day + 6) % 7));
-  return d.toISOString().slice(0, 10);
+  const date = new Date(`${isoDate}T12:00:00Z`);
+  const day = date.getUTCDay(); // 0 = domingo
+  date.setUTCDate(date.getUTCDate() - ((day + 6) % 7));
+  return date.toISOString().slice(0, 10);
 }
 
-const mean = (values: number[]) => values.reduce((s, v) => s + v, 0) / values.length;
-const round2 = (v: number) => Math.round(v * 100) / 100;
+const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+const round2 = (value: number) => Math.round(value * 100) / 100;
 
 export function weeklySeries(prices: ChickenPrice[]): WeeklyPoint[] {
   const groups = new Map<string, ChickenPrice[]>();
-  for (const p of prices) {
-    const key = weekStart(p.recorded_at);
+  for (const price of prices) {
+    const key = weekStart(price.recorded_at);
     const list = groups.get(key);
-    if (list) list.push(p);
-    else groups.set(key, [p]);
+    if (list) list.push(price);
+    else groups.set(key, [price]);
   }
 
   return [...groups.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([firstWeek], [secondWeek]) => firstWeek.localeCompare(secondWeek))
     .map(([week, rows]) => {
       const brands = new Map<string, number[]>();
-      for (const r of rows) {
-        const list = brands.get(r.brand);
-        if (list) list.push(r.price_per_kg);
-        else brands.set(r.brand, [r.price_per_kg]);
+      for (const row of rows) {
+        const list = brands.get(row.brand);
+        if (list) list.push(row.price_per_kg);
+        else brands.set(row.brand, [row.price_per_kg]);
       }
       const byBrand: Record<string, number> = {};
       for (const [brand, values] of brands) byBrand[brand] = round2(mean(values));
-      return { week, average: round2(mean(rows.map((r) => r.price_per_kg))), count: rows.length, byBrand };
+      return { week, average: round2(mean(rows.map((row) => row.price_per_kg))), count: rows.length, byBrand };
     });
 }
 
@@ -66,7 +66,7 @@ function kgComparison(wage: number, startPrice: number, nowPrice: number) {
 }
 
 /** Preços que entram no índice: só o preço normal de gôndola (ofertas e clube ficam de fora). */
-export const isIndexPrice = (p: ChickenPrice) => p.price_kind === "regular";
+export const isIndexPrice = (price: ChickenPrice) => price.price_kind === "regular";
 
 /**
  * KPIs do índice. As médias usam só preços normais; as contagens de registros e
@@ -91,7 +91,7 @@ export function computeKpis(prices: ChickenPrice[], settings: EconomicSettings):
     currentWeek: current.week,
     weeks: series.length,
     records: prices.length,
-    audited: prices.filter((p) => p.has_valid_exif).length,
+    audited: prices.filter((price) => price.has_valid_exif).length,
     promoCount: prices.length - indexPrices.length,
     minWageKg: kgComparison(settings.min_wage, first.average, current.average),
     avgWageKg: kgComparison(settings.avg_wage, first.average, current.average),

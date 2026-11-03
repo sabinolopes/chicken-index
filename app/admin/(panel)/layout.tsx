@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Drumstick, ExternalLink, LogOut, Users } from "lucide-react";
 import { getAdmin } from "@/lib/auth";
-import { signOut } from "../actions";
+import { signOut } from "@/app/admin/actions";
 
 export const metadata: Metadata = { title: "Admin · Frangômetro", robots: { index: false } };
 

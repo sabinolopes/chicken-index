@@ -22,7 +22,7 @@ function refreshPublicPages() {
 // Login / logout
 // ---------------------------------------------------------------------------
 
-export async function signIn(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+export async function signIn(_previousState: ActionResult | null, form: FormData): Promise<ActionResult> {
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   if (!email || !password) return { ok: false, error: "Informe e-mail e senha." };
@@ -75,13 +75,13 @@ export async function createPrice(form: FormData): Promise<ActionResult> {
     };
   }
 
-  const ext = photo.type === "image/webp" ? "webp" : "jpg";
-  const key = `${input.recorded_at.slice(0, 7)}/${input.original_sha256}.${ext}`;
+  const extension = photo.type === "image/webp" ? "webp" : "jpg";
+  const key = `${input.recorded_at.slice(0, 7)}/${input.original_sha256}.${extension}`;
   let photoUrl: string;
   try {
     photoUrl = await uploadPhoto(key, photo);
-  } catch (e) {
-    return { ok: false, error: `Falha no upload da foto: ${e instanceof Error ? e.message : e}` };
+  } catch (error) {
+    return { ok: false, error: `Falha no upload da foto: ${error instanceof Error ? error.message : error}` };
   }
 
   const { error: insertError } = await supabase.from("chicken_prices").insert({ ...input, photo_url: photoUrl });
@@ -102,8 +102,8 @@ export async function deletePrice(id: string): Promise<ActionResult> {
   await requireAdmin();
 
   const supabase = await createServerSupabase();
-  const { data: row, error } = await supabase.from("chicken_prices").select("photo_url").eq("id", id).maybeSingle();
-  if (error || !row) return { ok: false, error: "Registro não encontrado." };
+  const { data: row, error: findError } = await supabase.from("chicken_prices").select("photo_url").eq("id", id).maybeSingle();
+  if (findError || !row) return { ok: false, error: "Registro não encontrado." };
 
   const { error: deleteError } = await supabase.from("chicken_prices").delete().eq("id", id);
   if (deleteError) return { ok: false, error: `Falha ao excluir: ${deleteError.message}` };
@@ -113,13 +113,13 @@ export async function deletePrice(id: string): Promise<ActionResult> {
   const key = photoKeyFromUrl(row.photo_url);
   try {
     if (key) await deletePhoto(key);
-  } catch (e) {
-    return { ok: false, error: `Registro excluído, mas a foto ficou no R2 (${e instanceof Error ? e.message : e}).` };
+  } catch (error) {
+    return { ok: false, error: `Registro excluído, mas a foto ficou no R2 (${error instanceof Error ? error.message : error}).` };
   }
   return { ok: true, message: "Registro excluído." };
 }
 
-export async function updateSettings(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+export async function updateSettings(_previousState: ActionResult | null, form: FormData): Promise<ActionResult> {
   await requireAdmin();
 
   const minWage = parsePrice(String(form.get("min_wage") ?? ""));
@@ -145,14 +145,14 @@ export async function updateSettings(_prev: ActionResult | null, form: FormData)
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function inviteAdmin(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+export async function inviteAdmin(_previousState: ActionResult | null, form: FormData): Promise<ActionResult> {
   await requireAdmin();
 
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   if (!EMAIL_RE.test(email)) return { ok: false, error: "Informe um e-mail válido." };
 
-  const h = await headers();
-  const origin = h.get("origin") ?? `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get("origin") ?? `${requestHeaders.get("x-forwarded-proto") ?? "https"}://${requestHeaders.get("host")}`;
   const supabase = createAdminSupabase();
 
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
@@ -167,7 +167,7 @@ export async function inviteAdmin(_prev: ActionResult | null, form: FormData): P
     // Já tem conta (ex.: convidado antes): só promove a admin.
     const { data: list, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     if (listError) return { ok: false, error: `Falha ao buscar o usuário: ${listError.message}` };
-    const existing = list.users.find((u) => u.email?.toLowerCase() === email);
+    const existing = list.users.find((user) => user.email?.toLowerCase() === email);
     if (!existing) return { ok: false, error: "Usuário existente não encontrado." };
     if (isAdminUser(existing)) return { ok: false, error: `${email} já é admin.` };
     userId = existing.id;

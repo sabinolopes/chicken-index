@@ -42,19 +42,21 @@ export function InviteAdminForm() {
   );
 }
 
+const formatLastSignIn = (lastSignInAt: string | null) => (lastSignInAt ? formatDateTime(lastSignInAt) : "—");
+
 export function AdminList({ admins, currentUserId }: { admins: AdminListItem[]; currentUserId: string }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  function remove(a: AdminListItem) {
-    const what = a.pending ? `Cancelar o convite de ${a.email}?` : `Remover o acesso de admin de ${a.email}? A conta será apagada.`;
+  function remove(admin: AdminListItem) {
+    const what = admin.pending ? `Cancelar o convite de ${admin.email}?` : `Remover o acesso de admin de ${admin.email}? A conta será apagada.`;
     if (!confirm(what)) return;
     setError(null);
-    setPendingId(a.id);
+    setPendingId(admin.id);
     startTransition(async () => {
-      const res = await removeAdmin(a.id);
-      if (!res.ok) setError(res.error);
+      const result = await removeAdmin(admin.id);
+      if (!result.ok) setError(result.error);
       setPendingId(null);
     });
   }
@@ -76,36 +78,36 @@ export function AdminList({ admins, currentUserId }: { admins: AdminListItem[]; 
       )}
 
       <ul className="divide-y divide-border">
-        {admins.map((a) => {
-          const isMe = a.id === currentUserId;
+        {admins.map((admin) => {
+          const isMe = admin.id === currentUserId;
           return (
-            <li key={a.id} className="flex items-center gap-3 px-4 py-3">
+            <li key={admin.id} className="flex items-center gap-3 px-4 py-3">
               <Mail className="size-4 shrink-0 text-subtle" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">
-                  {a.email} {isMe && <span className="text-sm font-normal text-subtle">(você)</span>}
+                  {admin.email} {isMe && <span className="text-sm font-normal text-subtle">(você)</span>}
                 </p>
                 <p className="text-xs text-subtle">
-                  {a.pending ? (
+                  {admin.pending ? (
                     <span className="inline-flex items-center gap-1 text-amber-800">
                       <Clock className="size-3.5" aria-hidden />
-                      Convite pendente{a.invitedAt && ` · enviado em ${formatDateTime(a.invitedAt)}`}
+                      Convite pendente{admin.invitedAt && ` · enviado em ${formatDateTime(admin.invitedAt)}`}
                     </span>
                   ) : (
-                    `Último acesso: ${a.lastSignInAt ? formatDateTime(a.lastSignInAt) : "—"}`
+                    `Último acesso: ${formatLastSignIn(admin.lastSignInAt)}`
                   )}
                 </p>
               </div>
               {!isMe && (
                 <button
                   type="button"
-                  onClick={() => remove(a)}
+                  onClick={() => remove(admin)}
                   disabled={pendingId !== null}
-                  aria-label={a.pending ? `Cancelar convite de ${a.email}` : `Remover ${a.email}`}
-                  title={a.pending ? "Cancelar convite" : "Remover acesso"}
+                  aria-label={admin.pending ? `Cancelar convite de ${admin.email}` : `Remover ${admin.email}`}
+                  title={admin.pending ? "Cancelar convite" : "Remover acesso"}
                   className="rounded-lg p-2 text-subtle hover:bg-red-50 hover:text-red-700 disabled:opacity-30"
                 >
-                  {pendingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                  {pendingId === admin.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
                 </button>
               )}
             </li>

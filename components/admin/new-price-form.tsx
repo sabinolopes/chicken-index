@@ -29,7 +29,15 @@ const STEP_LABEL: Record<ProcessStep, string> = {
   compress: "Comprimindo para .webp…",
 };
 
-const kb = (bytes: number) => `${Math.round(bytes / 1024).toLocaleString("pt-BR")} KB`;
+// Rótulos curtos dos botões (cabem em três colunas no celular) e a explicação de cada tipo.
+const PRICE_KIND_SHORT_LABEL: Record<PriceKind, string> = { regular: "Normal", oferta: "Oferta", clube: "Clube" };
+const PRICE_KIND_HINT: Record<PriceKind, string> = {
+  regular: "Preço de gôndola para qualquer cliente. Só esse entra no índice de inflação.",
+  oferta: "Promoção temporária. Aparece no site, mas fica fora do índice.",
+  clube: "Preço exclusivo para quem tem cadastro/app do mercado. Aparece no site, mas fica fora do índice.",
+};
+
+const formatKilobytes = (bytes: number) => `${Math.round(bytes / 1024).toLocaleString("pt-BR")} KB`;
 
 function readLastPlace(): MarketSuggestion | null {
   try {
@@ -60,8 +68,8 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const markets = [...new Set(suggestions.map((s) => s.market_name))];
-  const cities = [...new Set(suggestions.map((s) => s.city))];
+  const markets = [...new Set(suggestions.map((suggestion) => suggestion.market_name))];
+  const cities = [...new Set(suggestions.map((suggestion) => suggestion.city))];
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -75,16 +83,9 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
       setPhoto(processed);
       setRecordedAt(processed.exif.datetime ? localIsoDate(processed.exif.datetime) : todayInBrazil());
 
-      if (!market) {
-        const last = readLastPlace();
-        if (last) {
-          setMarket(last.market_name);
-          setCity(last.city);
-          setUf(last.state);
-        }
-      }
-    } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : "Falha ao processar a foto.");
+      prefillLastPlace();
+    } catch (error) {
+      setPhotoError(error instanceof Error ? error.message : "Falha ao processar a foto.");
     } finally {
       setStep(null);
       if (cameraRef.current) cameraRef.current.value = "";
@@ -92,39 +93,51 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
     }
   }
 
-  function handleMarketChange(value: string) {
-    setMarket(value);
-    const known = suggestions.find((s) => s.market_name === value);
-    if (known) {
-      setCity(known.city);
-      setUf(known.state);
-    }
+  /** Na primeira foto, sugere o último mercado usado (o admin costuma fotografar vários preços no mesmo lugar). */
+  function prefillLastPlace() {
+    if (market) return;
+    const last = readLastPlace();
+    if (!last) return;
+    setMarket(last.market_name);
+    setCity(last.city);
+    setUf(last.state);
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function handleMarketChange(value: string) {
+    setMarket(value);
+    const known = suggestions.find((suggestion) => suggestion.market_name === value);
+    if (!known) return;
+    setCity(known.city);
+    setUf(known.state);
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (!photo) return;
 
-    const fd = new FormData(e.currentTarget);
-    const ext = photo.compressed.type === "image/webp" ? "webp" : "jpg";
-    fd.set("photo", new File([photo.compressed], `etiqueta.${ext}`, { type: photo.compressed.type }));
-    fd.set("original_sha256", photo.sha256);
-    fd.set("has_valid_exif", String(photo.hasValidExif));
-    fd.set("exif_device", photo.exif.device ?? "");
-    fd.set("exif_datetime", photo.exif.datetime?.toISOString() ?? "");
+    const formData = new FormData(event.currentTarget);
+    const extension = photo.compressed.type === "image/webp" ? "webp" : "jpg";
+    formData.set("photo", new File([photo.compressed], `etiqueta.${extension}`, { type: photo.compressed.type }));
+    formData.set("original_sha256", photo.sha256);
+    formData.set("has_valid_exif", String(photo.hasValidExif));
+    formData.set("exif_device", photo.exif.device ?? "");
+    formData.set("exif_datetime", photo.exif.datetime?.toISOString() ?? "");
 
     startTransition(async () => {
-      const res = await createPrice(fd);
-      setResult(res);
-      if (res.ok) {
-        try {
-          localStorage.setItem(LAST_PLACE_KEY, JSON.stringify({ market_name: market, city, state: uf }));
-        } catch {
-          // armazenamento indisponível (aba anônima)
-        }
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      const actionResult = await createPrice(formData);
+      setResult(actionResult);
+      if (!actionResult.ok) return;
+      rememberLastPlace();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
+  }
+
+  function rememberLastPlace() {
+    try {
+      localStorage.setItem(LAST_PLACE_KEY, JSON.stringify({ market_name: market, city, state: uf }));
+    } catch {
+      // armazenamento indisponível (aba anônima)
+    }
   }
 
   function resetForNext() {
@@ -139,7 +152,7 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
 
   // ---------------------------------------------------------------- sucesso
   if (result?.ok && result.record) {
-    const r = result.record;
+    const record = result.record;
     return (
       <div className="space-y-4">
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -150,13 +163,13 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
         </div>
         <div className="rounded-xl border border-border bg-surface p-4 text-sm">
           <p className="text-3xl font-bold tabular">
-            {formatBRL(r.price_per_kg)}
+            {formatBRL(record.price_per_kg)}
             <span className="text-base font-medium text-subtle">/kg</span>
           </p>
           <p className="mt-1 text-muted">
-            {r.brand} · {r.state_type} · {PRICE_KIND_LABEL[r.price_kind]} · {r.market_name} · {r.city}/{r.state} · {formatDate(r.recorded_at)}
+            {record.brand} · {record.state_type} · {PRICE_KIND_LABEL[record.price_kind]} · {record.market_name} · {record.city}/{record.state} · {formatDate(record.recorded_at)}
           </p>
-          <p className="mt-2 break-all font-mono text-[11px] text-subtle">SHA-256 {r.original_sha256}</p>
+          <p className="mt-2 break-all font-mono text-[11px] text-subtle">SHA-256 {record.original_sha256}</p>
         </div>
         <button type="button" onClick={resetForNext} className={primaryButtonClass}>
           <Camera className="size-5" aria-hidden />
@@ -179,8 +192,8 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
       <fieldset className="rounded-xl border border-border bg-surface px-4 pb-4 pt-3">
         <legend className="ml-2 px-2 text-sm font-medium text-muted">1. Foto da etiqueta</legend>
 
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
-        <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
+        <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(event) => handleFile(event.target.files?.[0])} />
 
         {!photo && !step && (
           <div className="grid grid-cols-2 gap-2">
@@ -242,7 +255,7 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
                   {photo.sha256.slice(0, 16)}…
                 </p>
                 <p className="text-xs text-subtle tabular">
-                  {kb(photo.originalBytes)} → {kb(photo.compressedBytes)} · {photo.width}×{photo.height} ·{" "}
+                  {formatKilobytes(photo.originalBytes)} → {formatKilobytes(photo.compressedBytes)} · {photo.width}×{photo.height} ·{" "}
                   {photo.compressed.type === "image/webp" ? "webp" : "jpg"}
                 </p>
               </div>
@@ -295,27 +308,23 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
           <span className={labelClass}>Este preço é</span>
           <input type="hidden" name="price_kind" value={priceKind} />
           <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tipo de preço">
-            {PRICE_KINDS.map((k) => (
+            {PRICE_KINDS.map((kindOption) => (
               <button
-                key={k}
+                key={kindOption}
                 type="button"
                 role="radio"
-                aria-checked={priceKind === k}
-                onClick={() => setPriceKind(k)}
+                aria-checked={priceKind === kindOption}
+                onClick={() => setPriceKind(kindOption)}
                 className={`rounded-lg border px-2 py-3 text-sm font-medium leading-tight ${
-                  priceKind === k ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
+                  priceKind === kindOption ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
                 }`}
               >
-                {k === "clube" ? "Clube" : k === "regular" ? "Normal" : PRICE_KIND_LABEL[k]}
+                {PRICE_KIND_SHORT_LABEL[kindOption]}
               </button>
             ))}
           </div>
           <p className="mt-1.5 text-xs text-subtle">
-            {priceKind === "regular"
-              ? "Preço de gôndola para qualquer cliente. Só esse entra no índice de inflação."
-              : priceKind === "oferta"
-                ? "Promoção temporária. Aparece no site, mas fica fora do índice."
-                : "Preço exclusivo para quem tem cadastro/app do mercado. Aparece no site, mas fica fora do índice."}
+            {PRICE_KIND_HINT[priceKind]}
           </p>
         </div>
 
@@ -323,18 +332,18 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
           <span className={labelClass}>Marca</span>
           <input type="hidden" name="brand" value={brand} />
           <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-4" role="radiogroup" aria-label="Marca">
-            {BRANDS.map((b) => (
+            {BRANDS.map((brandOption) => (
               <button
-                key={b}
+                key={brandOption}
                 type="button"
                 role="radio"
-                aria-checked={brand === b}
-                onClick={() => setBrand(b)}
+                aria-checked={brand === brandOption}
+                onClick={() => setBrand(brandOption)}
                 className={`rounded-lg border px-3 py-3 text-sm font-medium ${
-                  brand === b ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
+                  brand === brandOption ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
                 }`}
               >
-                {b}
+                {brandOption}
               </button>
             ))}
           </div>
@@ -344,18 +353,18 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
           <span className={labelClass}>Tipo</span>
           <input type="hidden" name="state_type" value={stateType} />
           <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo">
-            {(["resfriado", "congelado"] as const).map((t) => (
+            {(["resfriado", "congelado"] as const).map((stateTypeOption) => (
               <button
-                key={t}
+                key={stateTypeOption}
                 type="button"
                 role="radio"
-                aria-checked={stateType === t}
-                onClick={() => setStateType(t)}
+                aria-checked={stateType === stateTypeOption}
+                onClick={() => setStateType(stateTypeOption)}
                 className={`rounded-lg border px-3 py-3 text-sm font-medium capitalize ${
-                  stateType === t ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
+                  stateType === stateTypeOption ? "border-foreground bg-foreground text-white" : "border-border bg-surface hover:border-stone-400"
                 }`}
               >
-                {t}
+                {stateTypeOption}
               </button>
             ))}
           </div>
@@ -377,13 +386,13 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
             autoComplete="off"
             placeholder="Ex.: Supermercado Bom Preço"
             value={market}
-            onChange={(e) => handleMarketChange(e.target.value)}
+            onChange={(event) => handleMarketChange(event.target.value)}
             required
             className={inputClass}
           />
           <datalist id="market-options">
-            {markets.map((m) => (
-              <option key={m} value={m} />
+            {markets.map((marketOption) => (
+              <option key={marketOption} value={marketOption} />
             ))}
           </datalist>
         </div>
@@ -399,13 +408,13 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
               list="city-options"
               autoComplete="off"
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={(event) => setCity(event.target.value)}
               required
               className={inputClass}
             />
             <datalist id="city-options">
-              {cities.map((c) => (
-                <option key={c} value={c} />
+              {cities.map((cityOption) => (
+                <option key={cityOption} value={cityOption} />
               ))}
             </datalist>
           </div>
@@ -413,11 +422,11 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
             <label htmlFor="state" className={labelClass}>
               UF
             </label>
-            <select id="state" name="state" value={uf} onChange={(e) => setUf(e.target.value)} required className={inputClass}>
+            <select id="state" name="state" value={uf} onChange={(event) => setUf(event.target.value)} required className={inputClass}>
               <option value="">—</option>
-              {UFS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
+              {UFS.map((stateOption) => (
+                <option key={stateOption} value={stateOption}>
+                  {stateOption}
                 </option>
               ))}
             </select>
@@ -433,7 +442,7 @@ export function NewPriceForm({ suggestions }: { suggestions: MarketSuggestion[] 
             name="recorded_at"
             type="date"
             value={recordedAt}
-            onChange={(e) => setRecordedAt(e.target.value)}
+            onChange={(event) => setRecordedAt(event.target.value)}
             min="2020-01-01"
             required
             className={inputClass}

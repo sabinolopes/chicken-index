@@ -36,8 +36,8 @@ export interface PriceInput {
 
 const text = (value: FormDataEntryValue | null, max = 80) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 
-/** Valida os campos do formulário (roda de novo no servidor — nunca confiar no cliente). */
-export function parsePriceForm(form: FormData): { data: PriceInput } | { error: string } {
+/** Lê os campos crus do formulário, já aparados e com tamanho limitado. */
+function readPriceFields(form: FormData) {
   const brand = text(form.get("brand"));
   const stateType = text(form.get("state_type"));
   const priceKind = text(form.get("price_kind")) || "regular";
@@ -50,24 +50,41 @@ export function parsePriceForm(form: FormData): { data: PriceInput } | { error: 
   const device = text(form.get("exif_device"), 120) || null;
   const exifDatetime = text(form.get("exif_datetime"), 40) || null;
   const hasValidExif = form.get("has_valid_exif") === "true";
+  return { brand, stateType, priceKind, price, market, city, uf, recordedAt, sha, device, exifDatetime, hasValidExif };
+}
 
-  if (!(BRANDS as readonly string[]).includes(brand)) return { error: "Selecione a marca." };
-  if (stateType !== "resfriado" && stateType !== "congelado") return { error: "Selecione resfriado ou congelado." };
-  if (!(PRICE_KINDS as readonly string[]).includes(priceKind)) return { error: "Tipo de preço inválido." };
-  if (!Number.isFinite(price) || price < 1 || price > 500) return { error: "Preço por kg inválido (ex.: 21,99)." };
-  if (!market) return { error: "Informe o mercado." };
-  if (!city) return { error: "Informe a cidade." };
-  if (!(UFS as readonly string[]).includes(uf)) return { error: "Selecione o estado (UF)." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(recordedAt) || recordedAt < "2020-01-01" || recordedAt > todayInBrazil()) {
-    return { error: "Data da coleta inválida (não pode ser no futuro)." };
-  }
-  if (!/^[a-f0-9]{64}$/.test(sha)) return { error: "Hash SHA-256 ausente ou inválido. Selecione a foto novamente." };
-  if (exifDatetime && Number.isNaN(Date.parse(exifDatetime))) return { error: "Data EXIF inválida." };
+const isOneOf = (list: readonly string[], value: string) => list.includes(value);
+const isValidRecordedAt = (date: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= "2020-01-01" && date <= todayInBrazil();
 
+/** Primeira regra violada, na ordem em que os campos aparecem no formulário; null se tudo estiver certo. */
+function firstFieldError(fields: ReturnType<typeof readPriceFields>): string | null {
+  const rules: [valid: boolean, message: string][] = [
+    [isOneOf(BRANDS, fields.brand), "Selecione a marca."],
+    [isOneOf(["resfriado", "congelado"], fields.stateType), "Selecione resfriado ou congelado."],
+    [isOneOf(PRICE_KINDS, fields.priceKind), "Tipo de preço inválido."],
+    [Number.isFinite(fields.price) && fields.price >= 1 && fields.price <= 500, "Preço por kg inválido (ex.: 21,99)."],
+    [Boolean(fields.market), "Informe o mercado."],
+    [Boolean(fields.city), "Informe a cidade."],
+    [isOneOf(UFS, fields.uf), "Selecione o estado (UF)."],
+    [isValidRecordedAt(fields.recordedAt), "Data da coleta inválida (não pode ser no futuro)."],
+    [/^[a-f0-9]{64}$/.test(fields.sha), "Hash SHA-256 ausente ou inválido. Selecione a foto novamente."],
+    [!fields.exifDatetime || !Number.isNaN(Date.parse(fields.exifDatetime)), "Data EXIF inválida."],
+  ];
+  return rules.find(([valid]) => !valid)?.[1] ?? null;
+}
+
+/** Valida os campos do formulário (roda de novo no servidor — nunca confiar no cliente). */
+export function parsePriceForm(form: FormData): { data: PriceInput } | { error: string } {
+  const fields = readPriceFields(form);
+  const error = firstFieldError(fields);
+  if (error) return { error };
+
+  const { brand, stateType, priceKind, price, market, city, uf, recordedAt, sha, device, exifDatetime, hasValidExif } = fields;
   return {
     data: {
       brand,
-      state_type: stateType,
+      state_type: stateType as StateType,
       price_kind: priceKind as PriceKind,
       price_per_kg: price,
       market_name: market,
