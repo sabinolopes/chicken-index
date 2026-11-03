@@ -11,14 +11,20 @@ import type { AdminListItem } from "@/modules/admins/service";
 
 const formatLastSignIn = (lastSignInAt: string | null) => (lastSignInAt ? formatDateTime(lastSignInAt) : "—");
 
+/** Pergunta de confirmação: convite pendente é só cancelado; admin ativo perde a conta. */
+function removalQuestion(admin: AdminListItem) {
+  if (admin.pending) return `Cancelar o convite de ${admin.email}?`;
+  const who = admin.name ? `${admin.name} (${admin.email})` : admin.email;
+  return `Remover o acesso de admin de ${who}? A conta será apagada.`;
+}
+
 export function AdminList({ admins, currentUserId }: { admins: AdminListItem[]; currentUserId: string }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   function remove(admin: AdminListItem) {
-    const question = admin.pending ? `Cancelar o convite de ${admin.email}?` : `Remover o acesso de admin de ${admin.email}? A conta será apagada.`;
-    if (!confirm(question)) return;
+    if (!confirm(removalQuestion(admin))) return;
     setError(null);
     setPendingId(admin.id);
     startTransition(async () => {
@@ -44,8 +50,9 @@ export function AdminList({ admins, currentUserId }: { admins: AdminListItem[]; 
             <Mail className="size-4 shrink-0 text-subtle" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">
-                {admin.email} {admin.id === currentUserId && <span className="text-sm font-normal text-subtle">(você)</span>}
+                {admin.name ?? admin.email} {admin.id === currentUserId && <span className="text-sm font-normal text-subtle">(você)</span>}
               </p>
+              {admin.name && <p className="truncate text-sm text-muted">{admin.email}</p>}
               <p className="text-xs text-subtle">
                 {admin.pending ? (
                   <span className="inline-flex items-center gap-1 text-amber-800">
@@ -60,7 +67,7 @@ export function AdminList({ admins, currentUserId }: { admins: AdminListItem[]; 
             {admin.id !== currentUserId && (
               <IconButton
                 tone="danger"
-                label={admin.pending ? `Cancelar convite de ${admin.email}` : `Remover ${admin.email}`}
+                label={admin.pending ? `Cancelar convite de ${admin.email}` : `Remover ${admin.name ?? admin.email}`}
                 onClick={() => remove(admin)}
                 disabled={pendingId !== null}
               >

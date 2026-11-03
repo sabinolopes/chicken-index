@@ -1,10 +1,13 @@
 import "server-only";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { displayNameFromMetadata } from "@/modules/auth/account-rules";
 import { isAdminUser } from "@/modules/auth/role";
 
 export interface UserAccount {
   id: string;
   email: string | null;
+  /** Nome que a pessoa informou ao definir a senha; null para convites antigos ou pendentes. */
+  name: string | null;
   isAdmin: boolean;
   invitedAt: string | null;
   lastSignInAt: string | null;
@@ -30,6 +33,7 @@ export function createAdminDirectory(): AdminDirectory {
       return data.users.map((user) => ({
         id: user.id,
         email: user.email ?? null,
+        name: displayNameFromMetadata(user.user_metadata),
         isAdmin: isAdminUser(user),
         invitedAt: user.invited_at ?? null,
         lastSignInAt: user.last_sign_in_at ?? null,

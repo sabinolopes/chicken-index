@@ -5,7 +5,7 @@ import { inviteAdmin, removeAdmin, toAdminList } from "@/modules/admins/service"
 const REDIRECT = "https://frangometro.vercel.app/auth/definir-senha";
 
 function account(id: string, email: string, options: Partial<UserAccount> = {}): UserAccount {
-  return { id, email, isAdmin: false, invitedAt: null, lastSignInAt: null, ...options };
+  return { id, email, name: null, isAdmin: false, invitedAt: null, lastSignInAt: null, ...options };
 }
 
 /** Diretório de contas em memória com a mesma interface do Supabase Auth. */
@@ -143,6 +143,20 @@ describe("toAdminList", () => {
       ["", false],
       ["sabino@exemplo.com", false],
       ["zeca@exemplo.com", true],
+    ]);
+  });
+
+  it("ordena pelo nome de quem já informou, e pelo e-mail de quem ainda não", () => {
+    const list = toAdminList([
+      account("zeca", "zz-estranho-123@exemplo.com", { isAdmin: true, name: "Ana Souza", lastSignInAt: "2026-11-02T00:00:00Z" }),
+      account("bia", "bia@exemplo.com", { isAdmin: true }),
+      account("eduardo", "aa@exemplo.com", { isAdmin: true, name: "Éder Lima", lastSignInAt: "2026-11-02T00:00:00Z" }),
+    ]);
+
+    expect(list.map((admin) => [admin.name, admin.email])).toEqual([
+      ["Ana Souza", "zz-estranho-123@exemplo.com"],
+      [null, "bia@exemplo.com"],
+      ["Éder Lima", "aa@exemplo.com"],
     ]);
   });
 

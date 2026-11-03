@@ -8,19 +8,15 @@ import { Alert } from "@/components/elements/alert";
 import { Button } from "@/components/elements/button";
 import { Field, TextInput } from "@/components/elements/field";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { displayNameError, normalizeDisplayName, PASSWORD_MIN_LENGTH, passwordError } from "@/modules/auth/account-rules";
 import { sessionFromLink, type LinkStatus } from "./session-from-link";
 
-const MIN_LENGTH = 8;
-
-/** Erro de digitação antes de chamar o servidor; null quando as senhas servem. */
-export function passwordError(password: string, confirmation: string) {
-  if (password.length < MIN_LENGTH) return `A senha precisa ter pelo menos ${MIN_LENGTH} caracteres.`;
-  if (password !== confirmation) return "As senhas não conferem.";
-  return null;
-}
+/** Mensagem do Supabase ao salvar, em português. */
+const saveErrorMessage = (message: string) => (/different from the old/i.test(message) ? "Use uma senha diferente da anterior." : message);
 
 export function SetPasswordForm() {
   const [status, setStatus] = useState<LinkStatus>({ kind: "checking" });
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,20 +24,26 @@ export function SetPasswordForm() {
   const router = useRouter();
 
   useEffect(() => {
-    sessionFromLink().then(setStatus);
+    sessionFromLink().then((linkStatus) => {
+      setStatus(linkStatus);
+      if (linkStatus.kind === "ready") setName(linkStatus.name ?? "");
+    });
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const typingError = passwordError(password, confirmation);
+    const typingError = displayNameError(name) ?? passwordError(password, confirmation);
     setError(typingError);
     if (typingError) return;
 
     setSaving(true);
-    const { error: updateError } = await createBrowserSupabase().auth.updateUser({ password });
+    const { error: updateError } = await createBrowserSupabase().auth.updateUser({
+      password,
+      data: { full_name: normalizeDisplayName(name) },
+    });
     if (updateError) {
       setSaving(false);
-      setError(/different from the old/i.test(updateError.message) ? "Use uma senha diferente da anterior." : updateError.message);
+      setError(saveErrorMessage(updateError.message));
       return;
     }
     // A sessão nova já está nos cookies, que vão junto na navegação até o proxy.
@@ -78,12 +80,15 @@ export function SetPasswordForm() {
         Conta: <strong className="text-foreground">{status.email}</strong>
       </p>
       <input type="email" name="username" autoComplete="username" value={status.email} readOnly hidden />
+      <Field htmlFor="full-name" label="Seu nome" hint="Aparece para os outros admins na página Admins.">
+        <TextInput id="full-name" autoComplete="name" required maxLength={60} value={name} onChange={(event) => setName(event.target.value)} />
+      </Field>
       <Field htmlFor="new-password" label="Nova senha">
         <TextInput
           id="new-password"
           type="password"
           autoComplete="new-password"
-          minLength={MIN_LENGTH}
+          minLength={PASSWORD_MIN_LENGTH}
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -94,7 +99,7 @@ export function SetPasswordForm() {
           id="confirm-password"
           type="password"
           autoComplete="new-password"
-          minLength={MIN_LENGTH}
+          minLength={PASSWORD_MIN_LENGTH}
           required
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
@@ -105,7 +110,7 @@ export function SetPasswordForm() {
 
       <Button type="submit" variant="primary" disabled={saving}>
         {saving ? <Loader2 className="size-5 animate-spin" aria-hidden /> : <KeyRound className="size-5" aria-hidden />}
-        {saving ? "Salvando…" : "Salvar senha e entrar"}
+        {saving ? "Salvando…" : "Salvar e entrar"}
       </Button>
     </form>
   );

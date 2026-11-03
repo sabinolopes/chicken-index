@@ -1,7 +1,11 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { displayNameFromMetadata } from "@/modules/auth/account-rules";
 
-export type LinkStatus = { kind: "checking" } | { kind: "ready"; email: string } | { kind: "invalid"; message: string };
+export type LinkStatus =
+  | { kind: "checking" }
+  | { kind: "ready"; email: string; name: string | null }
+  | { kind: "invalid"; message: string };
 
 const EXPIRED = "Este link expirou ou já foi usado.";
 
@@ -41,5 +45,5 @@ export async function sessionFromLink(): Promise<LinkStatus> {
     data: { user },
   } = await createBrowserSupabase().auth.getUser();
   if (!user) return { kind: "invalid", message: "Abra esta página pelo link do e-mail de convite." };
-  return { kind: "ready", email: user.email ?? "" };
+  return { kind: "ready", email: user.email ?? "", name: displayNameFromMetadata(user.user_metadata) };
 }

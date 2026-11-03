@@ -6,24 +6,29 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export interface AdminListItem {
   id: string;
   email: string;
+  name: string | null;
   /** Convidado, mas ainda não definiu a senha. */
   pending: boolean;
   invitedAt: string | null;
   lastSignInAt: string | null;
 }
 
-/** Só as contas de admin, em ordem alfabética de e-mail, no formato da página Admins. */
+/** Como a pessoa aparece na lista: pelo nome, ou pelo e-mail enquanto não informou o nome. */
+const listLabel = (admin: AdminListItem) => admin.name ?? admin.email;
+
+/** Só as contas de admin, em ordem alfabética (nome ou e-mail), no formato da página Admins. */
 export function toAdminList(accounts: UserAccount[]): AdminListItem[] {
   return accounts
     .filter((account) => account.isAdmin)
     .map((account) => ({
       id: account.id,
       email: account.email ?? "(sem e-mail)",
+      name: account.name,
       pending: !account.lastSignInAt,
       invitedAt: account.invitedAt,
       lastSignInAt: account.lastSignInAt,
     }))
-    .sort((first, second) => first.email.localeCompare(second.email));
+    .sort((first, second) => listLabel(first).localeCompare(listLabel(second), "pt-BR"));
 }
 
 interface InviteAdminOptions {

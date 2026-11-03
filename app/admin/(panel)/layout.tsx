@@ -43,7 +43,9 @@ async function UserMenu() {
   if (!admin) return null;
   return (
     <form action={signOut} className="flex items-center gap-2">
-      <span className="hidden max-w-40 truncate text-subtle sm:inline">{admin.email}</span>
+      <span className="hidden max-w-40 truncate text-subtle sm:inline" title={admin.email}>
+        {admin.name ?? admin.email}
+      </span>
       <Button type="submit" variant="ghost">
         <LogOut className="size-4" aria-hidden />
         Sair
