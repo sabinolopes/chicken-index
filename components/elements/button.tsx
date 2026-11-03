@@ -13,7 +13,7 @@ const VARIANT_CLASS = {
   ghost: "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-muted hover:bg-stone-100 hover:text-foreground",
 } as const;
 
-export type ButtonVariant = keyof typeof VARIANT_CLASS;
+type ButtonVariant = keyof typeof VARIANT_CLASS;
 
 export const buttonClass = (variant: ButtonVariant, className = "") => `${VARIANT_CLASS[variant]} ${className}`.trim();
 

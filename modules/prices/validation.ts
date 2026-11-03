@@ -8,7 +8,7 @@ export const UFS = [
 
 // A foto chega já comprimida pelo navegador (~150 KB); 1 MB é folga para o JPEG de fallback.
 export const MAX_PHOTO_BYTES = 1024 * 1024;
-export const PHOTO_MIME_TYPES = ["image/webp", "image/jpeg"];
+const PHOTO_MIME_TYPES = ["image/webp", "image/jpeg"];
 
 /** Confere a foto comprimida enviada no formulário (tipo e tamanho), sem confiar no cliente. */
 export function parsePhotoFile(value: FormDataEntryValue | null): { file: File } | { error: string } {

@@ -1,6 +1,6 @@
 /** Resposta de uma Server Action para a interface: sucesso com mensagem ou erro legível. */
 export type ActionFailure = { ok: false; error: string };
-export type ActionSuccess = { ok: true; message: string };
+type ActionSuccess = { ok: true; message: string };
 export type ActionResult = ActionSuccess | ActionFailure;
 
 export const failure = (error: string): ActionFailure => ({ ok: false, error });

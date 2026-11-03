@@ -4,7 +4,7 @@
  * A compressão via canvas descarta todos os metadados (inclusive GPS) da foto publicada.
  */
 
-export interface PhotoExif {
+interface PhotoExif {
   datetime: Date | null;
   device: string | null;
 }
@@ -45,7 +45,7 @@ export function formatDevice(make?: unknown, model?: unknown) {
   return modelName.toLowerCase().startsWith(maker.toLowerCase()) ? modelName : `${brand} ${modelName}`.trim();
 }
 
-export async function readExif(buffer: ArrayBuffer): Promise<PhotoExif> {
+async function readExif(buffer: ArrayBuffer): Promise<PhotoExif> {
   try {
     const { default: exifr } = await import("exifr"); // carregado só quando há foto
     const tags = await exifr.parse(buffer, { pick: ["DateTimeOriginal", "Make", "Model"] });
@@ -93,7 +93,7 @@ const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
 
 /** Redimensiona para no máx. 1200px e busca ~150 KB em .webp (ou .jpg onde o canvas não gera webp, ex. Safari antigo). */
-export async function compressImage(file: Blob) {
+async function compressImage(file: Blob) {
   const img = await loadImage(file);
   const scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
   const width = Math.round(img.width * scale);

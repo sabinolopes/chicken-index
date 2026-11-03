@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Drumstick, ExternalLink, LogOut, Users } from "lucide-react";
-import { buttonClass } from "@/components/elements/button";
+import { Button, buttonClass } from "@/components/elements/button";
+import { Skeleton } from "@/components/elements/skeleton";
 import { getAdmin } from "@/modules/auth/session";
 import { signOut } from "@/modules/auth/actions";
 
@@ -25,7 +26,8 @@ export default function PanelLayout({ children }: LayoutProps<"/admin">) {
             <Link href="/" className={buttonClass("ghost")}>
               Site <ExternalLink className="size-3.5" aria-hidden />
             </Link>
-            <Suspense fallback={null}>
+            {/* Reserva o espaço do e-mail e do "Sair" para o menu não empurrar os links ao carregar. */}
+            <Suspense fallback={<Skeleton className="h-8 w-16 sm:w-56" />}>
               <UserMenu />
             </Suspense>
           </nav>
@@ -42,13 +44,10 @@ async function UserMenu() {
   return (
     <form action={signOut} className="flex items-center gap-2">
       <span className="hidden max-w-40 truncate text-subtle sm:inline">{admin.email}</span>
-      <button
-        type="submit"
-        className={buttonClass("ghost")}
-      >
+      <Button type="submit" variant="ghost">
         <LogOut className="size-4" aria-hidden />
         Sair
-      </button>
+      </Button>
     </form>
   );
 }

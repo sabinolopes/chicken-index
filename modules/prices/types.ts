@@ -11,7 +11,6 @@ export const PRICE_KIND_LABEL: Record<PriceKind, string> = {
 };
 
 export const BRANDS = ["Sadia", "Seara", "Perdigão", "Outra"] as const;
-export type Brand = (typeof BRANDS)[number];
 
 export interface ChickenPrice {
   id: string;

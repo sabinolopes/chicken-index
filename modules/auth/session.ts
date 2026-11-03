@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { isAdminUser } from "./role";
 
-export interface AdminUser {
+interface AdminUser {
   id: string;
   email: string;
 }

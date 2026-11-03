@@ -2,7 +2,7 @@ export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 4;
 /** Zoom aplicado ao clicar/tocar na etiqueta. */
 export const CLICK_ZOOM = 2.5;
-export const ZOOM_STEP = 0.5;
+const ZOOM_STEP = 0.5;
 export const CENTER = { x: 50, y: 50 };
 
 export type ZoomOrigin = { x: number; y: number };

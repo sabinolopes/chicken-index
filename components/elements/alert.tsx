@@ -7,7 +7,7 @@ const TONE = {
   success: { className: "bg-emerald-50 text-emerald-800", Icon: CheckCircle2, role: "status" },
 } as const;
 
-export type AlertTone = keyof typeof TONE;
+type AlertTone = keyof typeof TONE;
 
 interface AlertProps {
   tone: AlertTone;

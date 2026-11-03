@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import { requireAdmin } from "@/modules/auth/session";
+import { AdminList, AdminListSkeleton, InviteAdminForm } from "@/components/blocks/admin-users";
 import { listAdmins } from "@/modules/admins/queries";
-import { AdminList, InviteAdminForm } from "@/components/blocks/admin-users";
-import { Skeleton } from "@/components/elements/skeleton";
+import { requireAdmin } from "@/modules/auth/session";
 
 export default function AdminUsersPage() {
   return (
@@ -12,20 +11,19 @@ export default function AdminUsersPage() {
         Só quem está aqui pode cadastrar preços. Novos admins entram por convite: recebem um e-mail e definem a própria
         senha.
       </p>
-      <Suspense fallback={<Skeleton className="h-64" />}>
-        <AdminUsers />
-      </Suspense>
+      <div className="space-y-6">
+        {/* O convite não depende de dados: aparece na hora (o proxy e a action já exigem admin). */}
+        <InviteAdminForm />
+        <Suspense fallback={<AdminListSkeleton />}>
+          <CurrentAdmins />
+        </Suspense>
+      </div>
     </>
   );
 }
 
-async function AdminUsers() {
-  const me = await requireAdmin();
+async function CurrentAdmins() {
+  const currentAdmin = await requireAdmin();
   const admins = await listAdmins();
-  return (
-    <div className="space-y-6">
-      <InviteAdminForm />
-      <AdminList admins={admins} currentUserId={me.id} />
-    </div>
-  );
+  return <AdminList admins={admins} currentUserId={currentAdmin.id} />;
 }

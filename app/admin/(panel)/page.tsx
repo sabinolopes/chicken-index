@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Camera } from "lucide-react";
+import { RecentPrices, RecentPricesSkeleton } from "@/components/blocks/recent-prices";
+import { SettingsForm, SettingsFormSkeleton } from "@/components/blocks/settings-form";
 import { requireAdmin } from "@/modules/auth/session";
 import { listRecentPrices } from "@/modules/prices/queries";
 import { getSettings } from "@/modules/settings/queries";
-import { RecentPrices } from "@/components/blocks/recent-prices";
-import { SettingsForm } from "@/components/blocks/settings-form";
-import { Skeleton } from "@/components/elements/skeleton";
+
+const RECENT_LIMIT = 30;
 
 export default function AdminHomePage() {
   return (
@@ -19,21 +20,24 @@ export default function AdminHomePage() {
         Cadastrar novo preço
       </Link>
 
-      <Suspense fallback={<Skeleton className="h-96" />}>
-        <AdminHome />
+      {/* Cada bloco carrega e aparece por conta própria. */}
+      <Suspense fallback={<RecentPricesSkeleton />}>
+        <LatestPrices />
+      </Suspense>
+      <Suspense fallback={<SettingsFormSkeleton />}>
+        <Wages />
       </Suspense>
     </div>
   );
 }
 
-async function AdminHome() {
+async function LatestPrices() {
   await requireAdmin();
-  const [{ prices, total }, settings] = await Promise.all([listRecentPrices(30), getSettings()]);
+  const { prices, total } = await listRecentPrices(RECENT_LIMIT);
+  return <RecentPrices prices={prices} total={total} />;
+}
 
-  return (
-    <>
-      <RecentPrices prices={prices} total={total} />
-      <SettingsForm settings={settings} />
-    </>
-  );
+async function Wages() {
+  await requireAdmin();
+  return <SettingsForm settings={await getSettings()} />;
 }

@@ -13,7 +13,7 @@ Sistema web público e auditável para monitoramento semanal do preço do quilo 
 - **Processamento Client-Side no Upload:**
   - `exifr`: Extração de metadados da câmera no navegador.
   - Web Crypto API nativa (`crypto.subtle.digest`): Geração de hash SHA-256 do arquivo bruto original.
-  - Canvas API / `browser-image-compression`: Conversão e compressão da foto para `.webp` (máx 1200px, ~150KB) ANTES do upload para economizar armazenamento e banda.
+  - Canvas API (`modules/photos/process-photo.ts`, sem biblioteca extra): Conversão e compressão da foto para `.webp` (máx 1200px, ~150KB, JPEG como alternativa) ANTES do upload para economizar armazenamento e banda.
 
 ## 2. Regras Críticas de Escalabilidade (Proteção contra Tráfego Viral)
 1. **Cache Estático na Home (ISR / On-Demand Revalidation):**
@@ -67,6 +67,8 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
 2. **Área Admin (`/admin` e `/admin/login`):**
    - Login simples com Supabase Auth.
    - Formulário Mobile-First focado em rapidez no mercado: selecionar foto, pré-preenchimento automático da data via EXIF, input de preço por kg, seletor de marca, mercado e cidade.
+   - Admins entram só por convite por e-mail (página **Admins**, `/admin/usuarios`); o link leva a `/auth/definir-senha`.
+
 ## 6. Padrões de Código (inspirados no guia Gotenks)
 
 > "A máquina compila qualquer código que funcione; humanos precisam entender esse código para dar manutenção."

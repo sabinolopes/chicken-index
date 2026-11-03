@@ -6,7 +6,7 @@ import { Check, Copy } from "lucide-react";
 const CONFIRMATION_MS = 1500;
 
 /** Copia texto e indica "copiado" por um instante. Sem permissão de clipboard, não faz nada (o texto continua selecionável). */
-export function useCopyToClipboard() {
+function useCopyToClipboard() {
   const [copied, setCopied] = useState(false);
 
   async function copy(text: string) {
