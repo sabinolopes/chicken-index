@@ -18,6 +18,10 @@ export interface AdminDirectory {
   listUsers(): Promise<UserAccount[]>;
   /** Envia o convite; `alreadyRegistered` quando o e-mail já tem conta. */
   invite(email: string, redirectTo: string): Promise<{ userId: string } | { alreadyRegistered: true }>;
+  /** Cria a conta e devolve o link de convite sem enviar e-mail; `alreadyRegistered` quando já existe. */
+  inviteLink(email: string, redirectTo: string): Promise<{ userId: string; link: string } | { alreadyRegistered: true }>;
+  /** Link de uso único para uma conta existente definir uma nova senha (sem enviar e-mail). */
+  passwordLink(email: string, redirectTo: string): Promise<string>;
   grantAdmin(userId: string): Promise<void>;
   /** Apaga a conta: cancela convite pendente e impede novos logins. */
   deleteUser(userId: string): Promise<void>;
@@ -44,6 +48,17 @@ export function createAdminDirectory(): AdminDirectory {
       if (error?.code === "email_exists") return { alreadyRegistered: true };
       if (error) throw new Error(error.message);
       return { userId: data.user.id };
+    },
+    async inviteLink(email, redirectTo) {
+      const { data, error } = await auth.generateLink({ type: "invite", email, options: { redirectTo } });
+      if (error?.code === "email_exists") return { alreadyRegistered: true };
+      if (error) throw new Error(error.message);
+      return { userId: data.user.id, link: data.properties.action_link };
+    },
+    async passwordLink(email, redirectTo) {
+      const { data, error } = await auth.generateLink({ type: "recovery", email, options: { redirectTo } });
+      if (error) throw new Error(error.message);
+      return data.properties.action_link;
     },
     async grantAdmin(userId) {
       const { error } = await auth.updateUserById(userId, { app_metadata: { role: "admin" } });

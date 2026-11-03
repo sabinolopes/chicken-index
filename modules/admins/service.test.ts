@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdminDirectory, UserAccount } from "@/modules/admins/directory";
-import { inviteAdmin, removeAdmin, toAdminList } from "@/modules/admins/service";
+import { createInviteLink, inviteAdmin, removeAdmin, toAdminList } from "@/modules/admins/service";
 
 const REDIRECT = "https://frangometro.vercel.app/auth/definir-senha";
 
@@ -12,6 +12,7 @@ function account(id: string, email: string, options: Partial<UserAccount> = {}):
 function memoryDirectory(accounts: UserAccount[], options: { failOn?: keyof AdminDirectory } = {}) {
   const users = [...accounts];
   const sentInvites: { email: string; redirectTo: string }[] = [];
+  const generatedPasswordLinks: string[] = [];
   const failIf = (method: keyof AdminDirectory) => {
     if (options.failOn === method) throw new Error(`Auth fora do ar (${method})`);
   };
@@ -27,6 +28,17 @@ function memoryDirectory(accounts: UserAccount[], options: { failOn?: keyof Admi
       users.push(account(`user-${users.length + 1}`, email, { invitedAt: "2026-11-03T00:00:00Z" }));
       return { userId: `user-${users.length}` };
     },
+    async inviteLink(email, redirectTo) {
+      failIf("inviteLink");
+      if (users.some((user) => user.email === email)) return { alreadyRegistered: true };
+      users.push(account(`user-${users.length + 1}`, email, { invitedAt: "2026-11-03T00:00:00Z" }));
+      return { userId: `user-${users.length}`, link: `${redirectTo}#convite-${email}` };
+    },
+    async passwordLink(email, redirectTo) {
+      failIf("passwordLink");
+      generatedPasswordLinks.push(email);
+      return `${redirectTo}#nova-senha-${email}`;
+    },
     async grantAdmin(userId) {
       failIf("grantAdmin");
       const user = users.find((candidate) => candidate.id === userId);
@@ -38,7 +50,7 @@ function memoryDirectory(accounts: UserAccount[], options: { failOn?: keyof Admi
     },
   };
   const adminEmails = () => users.filter((user) => user.isAdmin).map((user) => user.email);
-  return { directory, users, sentInvites, adminEmails };
+  return { directory, users, sentInvites, generatedPasswordLinks, adminEmails };
 }
 
 const OWNER = account("owner", "sabino@exemplo.com", { isAdmin: true, lastSignInAt: "2026-11-02T10:00:00Z" });
@@ -49,7 +61,7 @@ describe("inviteAdmin", () => {
 
     const result = await inviteAdmin({ email: "  Nova@Exemplo.com ", redirectTo: REDIRECT, directory: memory.directory });
 
-    expect(result).toEqual({ ok: true, message: "Convite enviado para nova@exemplo.com. O link vale por 24 horas." });
+    expect(result).toEqual({ ok: true, message: "Convite enviado para nova@exemplo.com. O link do e-mail expira em cerca de 1 hora." });
     expect(memory.sentInvites).toEqual([{ email: "nova@exemplo.com", redirectTo: REDIRECT }]);
     expect(memory.adminEmails()).toEqual(["sabino@exemplo.com", "nova@exemplo.com"]);
   });
@@ -89,6 +101,61 @@ describe("inviteAdmin", () => {
     expect(await inviteAdmin({ email: "nova@exemplo.com", redirectTo: REDIRECT, directory: grantDown.directory })).toEqual({
       ok: false,
       error: "Convite enviado, mas falhou ao marcar como admin: Auth fora do ar (grantAdmin)",
+    });
+  });
+});
+
+describe("createInviteLink", () => {
+  it("cria a conta já como admin e devolve o link, sem mandar e-mail", async () => {
+    const memory = memoryDirectory([OWNER]);
+
+    const result = await createInviteLink({ email: " Victor@Exemplo.com ", redirectTo: REDIRECT, directory: memory.directory });
+
+    expect(result).toMatchObject({ ok: true, link: `${REDIRECT}#convite-victor@exemplo.com` });
+    expect(result.ok && result.message).toMatch(/^Link de convite criado para victor@exemplo.com\. Envie só para essa pessoa/);
+    expect(memory.sentInvites).toEqual([]);
+    expect(memory.adminEmails()).toContain("victor@exemplo.com");
+  });
+
+  it("gera link novo para convite pendente (o anterior expirou)", async () => {
+    const memory = memoryDirectory([OWNER, account("victor", "victor@exemplo.com", { isAdmin: true, invitedAt: "2026-11-03T00:00:00Z" })]);
+
+    const result = await createInviteLink({ email: "victor@exemplo.com", redirectTo: REDIRECT, directory: memory.directory });
+
+    expect(result).toMatchObject({ ok: true, link: `${REDIRECT}#nova-senha-victor@exemplo.com` });
+    expect(memory.generatedPasswordLinks).toEqual(["victor@exemplo.com"]);
+  });
+
+  it("nunca gera link para quem já entrou (seria entrar na conta de outro admin)", async () => {
+    const memory = memoryDirectory([OWNER, account("bia", "bia@exemplo.com", { isAdmin: true, lastSignInAt: "2026-11-02T10:00:00Z" })]);
+
+    const ownAccount = await createInviteLink({ email: "sabino@exemplo.com", redirectTo: REDIRECT, directory: memory.directory });
+    const otherAdmin = await createInviteLink({ email: "bia@exemplo.com", redirectTo: REDIRECT, directory: memory.directory });
+
+    expect(ownAccount).toMatchObject({ ok: false, error: expect.stringMatching(/já entrou no painel/) });
+    expect(otherAdmin).toMatchObject({ ok: false, error: expect.stringMatching(/já entrou no painel/) });
+    expect(memory.generatedPasswordLinks).toEqual([]);
+  });
+
+  it("conta existente que nunca entrou e não era admin vira admin junto com o link", async () => {
+    const memory = memoryDirectory([OWNER, account("antigo", "antigo@exemplo.com")]);
+
+    const result = await createInviteLink({ email: "antigo@exemplo.com", redirectTo: REDIRECT, directory: memory.directory });
+
+    expect(result.ok).toBe(true);
+    expect(memory.adminEmails()).toContain("antigo@exemplo.com");
+  });
+
+  it("recusa e-mail inválido e explica falha do Supabase", async () => {
+    const memory = memoryDirectory([OWNER], { failOn: "inviteLink" });
+
+    expect(await createInviteLink({ email: "victor@", redirectTo: REDIRECT, directory: memory.directory })).toEqual({
+      ok: false,
+      error: "Informe um e-mail válido.",
+    });
+    expect(await createInviteLink({ email: "victor@exemplo.com", redirectTo: REDIRECT, directory: memory.directory })).toEqual({
+      ok: false,
+      error: "Falha ao gerar o link: Auth fora do ar (inviteLink)",
     });
   });
 });

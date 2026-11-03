@@ -56,7 +56,7 @@ export async function inviteAdmin({ email: typedEmail, redirectTo, directory }: 
     const invitation = await directory.invite(email, redirectTo);
     target =
       "userId" in invitation
-        ? { userId: invitation.userId, message: `Convite enviado para ${email}. O link vale por 24 horas.` }
+        ? { userId: invitation.userId, message: `Convite enviado para ${email}. O link do e-mail expira em cerca de 1 hora.` }
         : await existingAccountToPromote(email, directory);
   } catch (error) {
     return failure(`Falha ao convidar: ${errorMessage(error)}`);
@@ -69,6 +69,42 @@ export async function inviteAdmin({ email: typedEmail, redirectTo, directory }: 
     return failure(`Convite enviado, mas falhou ao marcar como admin: ${errorMessage(error)}`);
   }
   return success(target.message);
+}
+
+export type InviteLinkResult = { ok: true; message: string; link: string } | ActionFailure;
+
+const LINK_WARNING = "Envie só para essa pessoa: o link entra na conta dela, vale uma vez e expira em cerca de 1 hora.";
+
+/**
+ * Para conta que já existe: novo link só se ela nunca entrou (convite pendente). Quem já entrou
+ * não recebe link pelo painel — um link desses abriria a conta de outra pessoa para quem o gerou.
+ */
+async function linkForExistingAccount(email: string, { redirectTo, directory }: Omit<InviteAdminOptions, "email">): Promise<InviteLinkResult> {
+  const existing = (await directory.listUsers()).find((account) => account.email?.toLowerCase() === email);
+  if (!existing) return failure("Usuário existente não encontrado.");
+  if (existing.lastSignInAt) return failure(`${email} já entrou no painel antes; o link só serve para quem ainda não definiu a senha.`);
+
+  const link = await directory.passwordLink(email, redirectTo);
+  if (!existing.isAdmin) await directory.grantAdmin(existing.id);
+  return { ok: true, link, message: `Novo link de convite para ${email}. ${LINK_WARNING}` };
+}
+
+/**
+ * Convite sem e-mail: gera o link para o admin mandar por WhatsApp ou outro canal.
+ * Contorna o limite de envio de e-mails do Supabase no plano gratuito.
+ */
+export async function createInviteLink({ email: typedEmail, redirectTo, directory }: InviteAdminOptions): Promise<InviteLinkResult> {
+  const email = typedEmail.trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) return failure("Informe um e-mail válido.");
+
+  try {
+    const invitation = await directory.inviteLink(email, redirectTo);
+    if ("alreadyRegistered" in invitation) return await linkForExistingAccount(email, { redirectTo, directory });
+    await directory.grantAdmin(invitation.userId);
+    return { ok: true, link: invitation.link, message: `Link de convite criado para ${email}. ${LINK_WARNING}` };
+  } catch (error) {
+    return failure(`Falha ao gerar o link: ${errorMessage(error)}`);
+  }
 }
 
 interface RemoveAdminOptions {
