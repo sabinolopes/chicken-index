@@ -1,5 +1,5 @@
 -- =====================================================================
--- Índice do Peito de Frango — Schema Supabase
+-- Frangômetro (índice do peito de frango) — Schema Supabase
 -- Execute no SQL Editor do Supabase (idempotente: pode rodar mais de uma vez).
 -- =====================================================================
 

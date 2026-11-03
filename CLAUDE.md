@@ -1,4 +1,6 @@
-# Projeto: Índice do Peito de Frango (Monitoramento de Inflação)
+# Projeto: Frangômetro, o índice do peito de frango (Monitoramento de Inflação)
+
+No ar em https://frangometro.vercel.app (projeto `frangometro` na Vercel, funções em São Paulo/gru1).
 
 Sistema web público e auditável para monitoramento semanal do preço do quilo do peito de frango em supermercados brasileiros, com foco em comprovação visual (fotos com auditoria de metadados EXIF e hash SHA-256) e comparativo de poder de compra salarial.
 

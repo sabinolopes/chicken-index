@@ -35,7 +35,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
   const filterLabel = [filters.brand, filters.market, filters.city || filters.state].filter(Boolean).join(" · ");
 
   return (
-    <div className="flex-1">
+    <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -43,10 +43,10 @@ export function Dashboard({ data }: { data: DashboardData }) {
               <Drumstick className="size-4" aria-hidden />
               Monitor de inflação
             </div>
-            <h1 className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight">Índice do Peito de Frango</h1>
+            <h1 className="mt-1 text-3xl sm:text-4xl font-bold tracking-tight">Frangômetro</h1>
             <p className="mt-2 max-w-2xl text-muted">
-              Preço do quilo coletado semanalmente em supermercados, com foto da etiqueta auditada por metadados EXIF e
-              hash SHA-256.
+              Preço do quilo do peito de frango coletado semanalmente em supermercados, com foto da etiqueta auditada
+              por metadados EXIF e hash SHA-256.
             </p>
           </div>
           <button
@@ -61,7 +61,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 flex flex-col gap-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 flex flex-col gap-6">
         <Filters prices={data.prices} value={filters} onChange={setFilters} resultCount={filtered.length} />
 
         {kpis ? (

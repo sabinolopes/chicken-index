@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Drumstick } from "lucide-react";
 import { LoginForm } from "@/components/admin/login-form";
 
-export const metadata: Metadata = { title: "Entrar · Admin · Índice do Peito de Frango", robots: { index: false } };
+export const metadata: Metadata = { title: "Entrar · Admin · Frangômetro", robots: { index: false } };
 
 export default function LoginPage() {
   return (
@@ -12,7 +12,7 @@ export default function LoginPage() {
         <div className="mb-6 text-center">
           <Drumstick className="mx-auto size-8 text-accent" aria-hidden />
           <h1 className="mt-2 text-2xl font-bold tracking-tight">Área do Admin</h1>
-          <p className="mt-1 text-sm text-muted">Índice do Peito de Frango</p>
+          <p className="mt-1 text-sm text-muted">Frangômetro</p>
         </div>
 
         <LoginForm />

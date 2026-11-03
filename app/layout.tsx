@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Índice do Peito de Frango",
+  title: "Frangômetro · Preço do peito de frango",
   description:
     "Monitoramento semanal e auditável do preço do quilo do peito de frango em supermercados brasileiros, com fotos verificadas (EXIF + SHA-256) e comparativo de poder de compra.",
 };

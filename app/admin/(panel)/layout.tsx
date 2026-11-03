@@ -5,7 +5,7 @@ import { Drumstick, ExternalLink, LogOut, Users } from "lucide-react";
 import { getAdmin } from "@/lib/auth";
 import { signOut } from "../actions";
 
-export const metadata: Metadata = { title: "Admin · Índice do Peito de Frango", robots: { index: false } };
+export const metadata: Metadata = { title: "Admin · Frangômetro", robots: { index: false } };
 
 export default function PanelLayout({ children }: LayoutProps<"/admin">) {
   return (

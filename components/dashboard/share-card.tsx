@@ -16,7 +16,10 @@ interface Props {
   onClose: () => void;
 }
 
-function drawCard(ctx: CanvasRenderingContext2D, { kpis, settings, filterLabel }: Omit<Props, "onClose">) {
+function drawCard(
+  ctx: CanvasRenderingContext2D,
+  { kpis, settings, filterLabel, site }: Omit<Props, "onClose"> & { site: string },
+) {
   const font = (weight: number, size: number) => `${weight} ${size}px "Geist", Arial, Helvetica, sans-serif`;
   const pad = 88;
 
@@ -28,7 +31,14 @@ function drawCard(ctx: CanvasRenderingContext2D, { kpis, settings, filterLabel }
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#b42318";
   ctx.font = font(700, 30);
-  ctx.fillText("ÍNDICE DO PEITO DE FRANGO", pad, 120);
+  ctx.fillText("FRANGÔMETRO · PEITO DE FRANGO", pad, 120);
+  if (site) {
+    ctx.fillStyle = "#8a847d";
+    ctx.font = font(500, 28);
+    ctx.textAlign = "right";
+    ctx.fillText(site, W - pad, 120);
+    ctx.textAlign = "left";
+  }
 
   ctx.fillStyle = "#57534e";
   ctx.font = font(400, 32);
@@ -102,13 +112,15 @@ function drawCard(ctx: CanvasRenderingContext2D, { kpis, settings, filterLabel }
 export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
+  // Endereço do site no card e no texto, para quem recebe o print saber onde conferir as fotos.
+  const site = typeof window === "undefined" ? "" : window.location.host;
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
     // Espera a fonte da página para o canvas usar a mesma tipografia.
-    document.fonts.ready.then(() => drawCard(ctx, { kpis, settings, filterLabel }));
-  }, [kpis, settings, filterLabel]);
+    document.fonts.ready.then(() => drawCard(ctx, { kpis, settings, filterLabel, site }));
+  }, [kpis, settings, filterLabel, site]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -122,18 +134,19 @@ export function ShareCardDialog({ kpis, settings, filterLabel, onClose }: Props)
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `indice-peito-de-frango-${kpis.currentWeek}.png`;
+      a.download = `frangometro-${kpis.currentWeek}.png`;
       a.click();
       URL.revokeObjectURL(url);
     }, "image/png");
   };
 
   const text = [
-    `🐔 *Índice do Peito de Frango*${filterLabel ? ` — ${filterLabel}` : ""}`,
+    `🐔 *Frangômetro*: preço do peito de frango${filterLabel ? ` — ${filterLabel}` : ""}`,
     `Preço médio do kg (sem promoções): *${formatBRL(kpis.currentAvg)}* (${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)})`,
     `Salário mínimo comprava ${formatKg(kpis.minWageKg.start)}, hoje compra ${formatKg(kpis.minWageKg.now)}.`,
     `Salário médio comprava ${formatKg(kpis.avgWageKg.start)}, hoje compra ${formatKg(kpis.avgWageKg.now)}.`,
     `Fotos auditadas com EXIF + SHA-256.`,
+    ...(site ? [`Veja as fotos das etiquetas: https://${site}`] : []),
   ].join("\n");
 
   const copyText = async () => {

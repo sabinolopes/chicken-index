@@ -1,4 +1,6 @@
-# Índice do Peito de Frango
+# Frangômetro
+
+No ar em **https://frangometro.vercel.app**.
 
 Monitoramento semanal e auditável do preço do quilo do peito de frango em supermercados brasileiros. Cada preço tem a foto da etiqueta, com auditoria de metadados EXIF e hash SHA-256 do arquivo original, e o dashboard compara o preço com o poder de compra do salário mínimo e do salário médio.
 
