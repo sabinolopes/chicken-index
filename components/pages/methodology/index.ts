@@ -1,0 +1,1 @@
+export { Methodology } from "./methodology";

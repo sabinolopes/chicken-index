@@ -3,19 +3,21 @@
 import { useState } from "react";
 import { Filters } from "@/components/blocks/filters";
 import { Gallery } from "@/components/blocks/gallery";
+import { InflationComparison } from "@/components/blocks/inflation-comparison";
 import { KpiCards } from "@/components/blocks/kpi-cards";
 import { PriceChart } from "@/components/blocks/price-chart";
 import { ShareCardDialog } from "@/components/blocks/share-card";
 import { WageThermometer } from "@/components/blocks/wage-thermometer";
 import type { DashboardData } from "@/modules/dashboard/types";
+import type { OfficialInflation } from "@/modules/inflation/types";
 import { DashboardFooter } from "./dashboard-footer";
 import { DashboardHeader } from "./dashboard-header";
 import { emptyMessage } from "./empty-message";
 import { useDashboard } from "./use-dashboard";
 
 /** Página pública: filtros no topo; indicadores, gráfico e galeria seguem o recorte escolhido. */
-export function Dashboard({ data }: { data: DashboardData }) {
-  const { filters, setFilters, filtered, series, promoSeries, kpis, filterLabel, filterKey } = useDashboard(data);
+export function Dashboard({ data, inflation }: { data: DashboardData; inflation: OfficialInflation | null }) {
+  const { filters, setFilters, filtered, series, promoSeries, kpis, ipcaComparison, filterLabel, filterKey } = useDashboard(data, inflation);
   const [shareOpen, setShareOpen] = useState(false);
   const period = kpis ? { from: kpis.firstWeek, to: data.prices[0]?.recorded_at ?? kpis.currentWeek } : null;
 
@@ -31,6 +33,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
             <KpiCards kpis={kpis} />
             <WageThermometer kpis={kpis} settings={data.settings} />
             <PriceChart series={series} promoSeries={promoSeries} />
+            <InflationComparison comparison={ipcaComparison} />
           </>
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center text-muted">

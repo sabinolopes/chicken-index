@@ -1,0 +1,48 @@
+# Backup semanal do banco (schema public: preços e salários) para o bucket privado
+# frangometro-backups no Cloudflare R2. As fotos já ficam no R2 e não entram aqui.
+# Segredos (Settings → Secrets and variables → Actions), cadastrados por quem tem acesso:
+#   SUPABASE_DB_URL              string de conexão do Session pooler (porta 5432)
+#   R2_ACCOUNT_ID                id da conta Cloudflare
+#   R2_BACKUP_ACCESS_KEY_ID      token R2 com "Object Read & Write" só no bucket de backup
+#   R2_BACKUP_SECRET_ACCESS_KEY
+name: Backup do banco
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # segunda-feira, 03:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BUCKET: frangometro-backups
+    steps:
+      - name: Exportar o banco
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "::error::Segredo SUPABASE_DB_URL não cadastrado."; exit 1; }
+          # pg_dump precisa ser da mesma versão do Postgres do Supabase (17).
+          docker run --rm -e SUPABASE_DB_URL -v "$PWD:/backup" postgres:17 \
+            sh -c 'pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges --format=custom --file=/backup/frangometro.dump'
+          # Falha se o arquivo não abrir ou vier sem a tabela de preços.
+          docker run --rm -v "$PWD:/backup" postgres:17 pg_restore --list /backup/frangometro.dump | grep -q "TABLE DATA public chicken_prices"
+          ls -lh frangometro.dump
+
+      - name: Enviar para o R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          key="db/$(date -u +%Y-%m-%d).dump"
+          aws s3 cp frangometro.dump "s3://$BUCKET/$key" --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --only-show-errors
+          echo "Backup salvo em $BUCKET/$key"

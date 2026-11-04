@@ -36,6 +36,9 @@ export interface Kpis {
   avgWageKg: { start: number; now: number; deltaPct: number };
 }
 
+/** Variação (%) abaixo da qual o preço é tratado como estável, nos cards e na prévia do link. */
+export const STABLE_PCT = 0.05;
+
 /** Segunda-feira da semana de uma data ISO (YYYY-MM-DD). */
 export function weekStart(isoDate: string) {
   const date = new Date(`${isoDate}T12:00:00Z`);

@@ -65,7 +65,10 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
    - **Gráfico de Evolução (Recharts):** Linha do tempo semanal mostrando a evolução do preço médio e linhas comparativas por marca.
    - **Galeria de Prova Real:** Grid de cards com a foto da etiqueta, preço/kg em destaque, mercado, cidade, data e badge "Foto Auditada (EXIF + SHA256)". Ao clicar, abre um Modal com Lupa/Zoom na etiqueta e os dados técnicos da câmera.
    - **Card Compartilhável:** Botão "Gerar Resumo para Redes" que formata um card limpo pronto para print ou download para WhatsApp/Instagram.
-2. **Área Admin (`/admin` e `/admin/login`):**
+   - **Frangômetro vs. inflação oficial:** painel com o IPCA do IBGE (índice geral, Alimentação e bebidas e o subitem Frango em pedaços, tabela 7060 do SIDRA), buscado sozinho e em cache por um dia (`modules/inflation`). Compara os meses em comum desde a 1ª coleta; enquanto o IBGE não publica o 1º mês, mostra o acumulado em 12 meses como referência. IBGE fora do ar → painel diz que está indisponível (falha fica em cache só por minutos).
+   - **Prévia do link (`app/opengraph-image.tsx`):** imagem 1200×630 gerada com os mesmos dados em cache (preço médio, variação, salário mínimo), que aparece ao colar o link no WhatsApp e nas redes. Fontes Geist em `assets/fonts/`.
+3. **Como medimos (`/como-medimos`):** metodologia em linguagem simples (coleta, auditoria EXIF/SHA-256, o que entra no índice, cálculo de mesmos produtos, termômetro e comparação com o IPCA). Ao mudar uma regra do índice, atualize esta página.
+4. **Área Admin (`/admin` e `/admin/login`):**
    - Login simples com Supabase Auth.
    - Formulário Mobile-First focado em rapidez no mercado: selecionar foto, pré-preenchimento automático da data via EXIF, input de preço por kg, seletor de marca, mercado e cidade.
    - Admins entram só por convite por e-mail (página **Admins**, `/admin/usuarios`); o link leva a `/auth/definir-senha`.
@@ -110,7 +113,7 @@ O código de negócio fica em `modules/<domínio>/`, cada um com os mesmos papé
 | `queries.ts` | Leituras para as páginas | Sem regras; monta o cliente certo (público com cache ou sessão do admin) |
 | `actions.ts` | Server Actions (`"use server"`) | Camada fina: `requireAdmin()` → validação → serviço → invalidação de cache. Sem regra de negócio |
 
-Domínios: `auth` (sessão e role), `prices` (cadastro e exclusão), `settings` (salários), `admins` (convite e remoção), `photos` (chaves, R2 e pipeline do navegador), `dashboard` (consulta pública com cache, invalidação e estatísticas).
+Domínios: `auth` (sessão e role), `prices` (cadastro e exclusão), `settings` (salários), `admins` (convite e remoção), `photos` (chaves, R2 e pipeline do navegador), `dashboard` (consulta pública com cache, invalidação, estatísticas e prévia do link), `inflation` (IPCA do IBGE e comparação com o índice).
 
 - **Dependências apontam para dentro:** `actions` → `service` → interfaces (`PricesRepository`, `PhotoStorage`, `AdminDirectory`). O serviço importa só tipos dessas interfaces; a implementação real é escolhida na action.
 - **`lib/`** guarda apenas o que é genérico e sem domínio: `format.ts`, `parse.ts`, `action-result.ts` e os clientes em `lib/supabase/`.
@@ -147,3 +150,8 @@ Regras:
 - **Textos de interface ficam no próprio componente**, em pt-BR (o site é só para o Brasil). Se um dia houver outro idioma, extraia para `texts.ts` planos por block.
 - **Testes de componente** usam Testing Library no jsdom (`// @vitest-environment jsdom` no topo): testam o que o usuário vê e faz (papel acessível, clique, digitação), nunca detalhes internos.
 
+## 9. Backup
+
+- `.github/workflows/backup.yml` roda toda segunda às 03:00 (Brasília) e sob demanda: `pg_dump` do schema `public` (Postgres 17, formato custom) para o bucket **privado** `frangometro-backups` do R2, em `db/AAAA-MM-DD.dump`. Falha se o dump vier sem `chicken_prices`.
+- Segredos do GitHub Actions (cadastrados pelo dono do repositório, nunca no código nem no chat): `SUPABASE_DB_URL` (Session pooler, porta 5432), `R2_ACCOUNT_ID`, `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY` (token R2 só com acesso a esse bucket).
+- Restaurar: baixe o `.dump` do R2 e rode `pg_restore --no-owner --no-privileges --clean --if-exists -d "<url do banco>" arquivo.dump`. Admins (schema `auth`) não entram no backup: convide de novo.

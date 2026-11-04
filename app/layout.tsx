@@ -12,10 +12,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const title = "Frangômetro · Preço do peito de frango";
+const description =
+  "Monitoramento semanal e auditável do preço do quilo do peito de frango em supermercados brasileiros, com fotos verificadas (EXIF + SHA-256) e comparativo de poder de compra.";
+
+// A imagem da prévia vem de app/opengraph-image.tsx; na Vercel, o Next monta a URL
+// absoluta com o domínio de produção (VERCEL_PROJECT_PRODUCTION_URL).
 export const metadata: Metadata = {
-  title: "Frangômetro · Preço do peito de frango",
-  description:
-    "Monitoramento semanal e auditável do preço do quilo do peito de frango em supermercados brasileiros, com fotos verificadas (EXIF + SHA-256) e comparativo de poder de compra.",
+  title,
+  description,
+  openGraph: { title, description, siteName: "Frangômetro", locale: "pt_BR", type: "website" },
+  twitter: { card: "summary_large_image", title, description },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { STABLE_THRESHOLD, trendOf } from "@/components/blocks/kpi-cards/trend";
+import { trendOf } from "@/components/blocks/kpi-cards/trend";
+import { STABLE_PCT } from "@/modules/dashboard/stats";
 
 describe("trendOf", () => {
   it("alta de preço é ruim (vermelho), queda é boa (verde)", () => {
@@ -9,8 +10,8 @@ describe("trendOf", () => {
 
   it("variações minúsculas contam como estável", () => {
     expect(trendOf(0).label).toBe("estável");
-    expect(trendOf(STABLE_THRESHOLD).label).toBe("estável");
-    expect(trendOf(-STABLE_THRESHOLD).label).toBe("estável");
-    expect(trendOf(STABLE_THRESHOLD + 0.01).label).toBe("alta");
+    expect(trendOf(STABLE_PCT).label).toBe("estável");
+    expect(trendOf(-STABLE_PCT).label).toBe("estável");
+    expect(trendOf(STABLE_PCT + 0.01).label).toBe("alta");
   });
 });

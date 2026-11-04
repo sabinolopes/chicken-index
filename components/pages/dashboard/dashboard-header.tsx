@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Drumstick, Share2 } from "lucide-react";
 import { Button } from "@/components/elements/button";
 
@@ -14,7 +15,10 @@ export function DashboardHeader({ onShare, canShare }: { onShare: () => void; ca
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Frangômetro</h1>
           <p className="mt-2 max-w-2xl text-muted">
             Preço do quilo do peito de frango coletado semanalmente em supermercados, com foto da etiqueta auditada por
-            metadados EXIF e hash SHA-256.
+            metadados EXIF e hash SHA-256.{" "}
+            <Link href="/como-medimos" className="font-medium text-foreground underline underline-offset-2 hover:text-accent">
+              Como medimos
+            </Link>
           </p>
         </div>
         <Button variant="dark" onClick={onShare} disabled={!canShare} className="shrink-0 px-4">
