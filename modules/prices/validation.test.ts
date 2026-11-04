@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_PHOTO_BYTES, parsePhotoFile, parsePriceForm } from "@/modules/prices/validation";
+import { isPriceId, MAX_PHOTO_BYTES, parsePhotoFile, parsePriceDetails, parsePriceForm } from "@/modules/prices/validation";
 
 const SHA = "a".repeat(64);
 
@@ -124,5 +124,45 @@ describe("parsePhotoFile", () => {
     expect(parsePhotoFile(photo(0, "image/webp"))).toEqual({ error: "Foto comprimida ausente." });
     expect(parsePhotoFile(photo(10, "image/png"))).toEqual({ error: "A foto deve estar em .webp ou .jpg." });
     expect(parsePhotoFile(photo(MAX_PHOTO_BYTES + 1, "image/webp"))).toEqual({ error: "Foto comprimida maior que 1 MB." });
+  });
+});
+
+describe("parsePriceDetails (correção de um cadastro)", () => {
+  it("lê só os dados da etiqueta, com as mesmas regras do cadastro", () => {
+    const form = priceForm({ price_per_kg: "19,69", brand: "pif paf" });
+    form.delete("original_sha256");
+    form.delete("exif_datetime");
+
+    expect(parsePriceDetails(form)).toEqual({
+      data: {
+        brand: "Pif Paf",
+        state_type: "resfriado",
+        price_kind: "regular",
+        price_per_kg: 19.69,
+        market_name: "Supermercado Unidos",
+        city: "Itaperuna",
+        state: "RJ",
+        recorded_at: "2026-10-30",
+      },
+    });
+  });
+
+  it("nunca devolve hash nem EXIF, mesmo que o navegador mande", () => {
+    const result = parsePriceDetails(priceForm({ has_valid_exif: "true" }));
+    expect(Object.keys("data" in result ? result.data : {})).not.toContain("original_sha256");
+    expect(Object.keys("data" in result ? result.data : {})).not.toContain("has_valid_exif");
+  });
+
+  it("recusa preço ou data inválidos como no cadastro", () => {
+    expect(parsePriceDetails(priceForm({ price_per_kg: "0,50" }))).toEqual({ error: "Preço por kg inválido (ex.: 21,99)." });
+    expect(parsePriceDetails(priceForm({ recorded_at: "2999-01-01" }))).toEqual({ error: "Data da coleta inválida (não pode ser no futuro)." });
+  });
+});
+
+describe("isPriceId", () => {
+  it("aceita só ids no formato do banco", () => {
+    expect(isPriceId("3f2b8c1e-9a4d-4e7b-8c2a-1d5e6f7a8b9c")).toBe(true);
+    expect(isPriceId("1 or 1=1")).toBe(false);
+    expect(isPriceId(42)).toBe(false);
   });
 });

@@ -1,16 +1,26 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { BadgeCheck, Loader2, Trash2, TriangleAlert } from "lucide-react";
+import { BadgeCheck, Loader2, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import { EditPriceDialog } from "@/components/blocks/edit-price";
 import { Alert } from "@/components/elements/alert";
 import { IconButton } from "@/components/elements/button";
 import { Panel, PanelHeader } from "@/components/elements/panel";
 import { formatBRL, formatDate } from "@/lib/format";
 import { deletePrice } from "@/modules/prices/actions";
+import type { FormSuggestions } from "@/modules/prices/queries";
 import { PRICE_KIND_LABEL, type ChickenPrice } from "@/modules/prices/types";
 
-/** Últimos cadastros com exclusão (registro e foto), sempre pedindo confirmação. */
-export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total: number }) {
+interface RecentPricesProps {
+  prices: ChickenPrice[];
+  total: number;
+  /** Mercados e marcas já usados, para o autocompletar da correção. */
+  suggestions: FormSuggestions;
+}
+
+/** Últimos cadastros com correção dos dados e exclusão (registro e foto, sempre pedindo confirmação). */
+export function RecentPrices({ prices, total, suggestions }: RecentPricesProps) {
+  const [editing, setEditing] = useState<ChickenPrice | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -60,8 +70,12 @@ export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total:
                 </p>
                 <p className="truncate text-xs text-subtle">
                   {price.market_name} · {price.city}/{price.state} · {formatDate(price.recorded_at)}
+                  {price.updated_at && " · corrigido"}
                 </p>
               </div>
+              <IconButton label={`Corrigir registro de ${price.market_name}`} onClick={() => setEditing(price)} disabled={pendingId !== null}>
+                <Pencil className="size-4" />
+              </IconButton>
               <IconButton tone="danger" label={`Excluir registro de ${price.market_name}`} onClick={() => remove(price)} disabled={pendingId !== null}>
                 {pendingId === price.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
               </IconButton>
@@ -69,6 +83,8 @@ export function RecentPrices({ prices, total }: { prices: ChickenPrice[]; total:
           ))}
         </ul>
       )}
+
+      {editing && <EditPriceDialog price={editing} suggestions={suggestions} onClose={() => setEditing(null)} />}
     </Panel>
   );
 }

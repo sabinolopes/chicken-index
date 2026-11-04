@@ -5,7 +5,7 @@ import { normalizeBrand, OTHER_BRAND, type PriceKind, type StateType } from "@/m
 /** Campos digitados/escolhidos no formulário (a foto e o EXIF vêm do processamento). */
 export interface PriceFields {
   price: string;
-  /** Botão escolhido (Sadia, Seara, Perdigão ou "Outra"). */
+  /** Botão escolhido (uma das marcas principais ou "Outra"). */
   brand: string;
   /** Marca digitada quando o botão é "Outra" (Oi Frango, Ki Frango...). */
   otherBrand: string;

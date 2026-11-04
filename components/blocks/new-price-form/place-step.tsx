@@ -15,15 +15,16 @@ interface PlaceStepProps {
   photoDay: string | null;
   dateMismatch: boolean;
   disabled: boolean;
+  legend?: string;
 }
 
 /** Etapa 3: mercado (com autocompletar que preenche cidade/UF) e data da coleta. */
-export function PlaceStep({ fields, setField, onMarketChange, suggestions, photoDay, dateMismatch, disabled }: PlaceStepProps) {
+export function PlaceStep({ fields, setField, onMarketChange, suggestions, photoDay, dateMismatch, disabled, legend = "3. Local e data" }: PlaceStepProps) {
   const { markets, cities } = useMemo(() => placeOptions(suggestions), [suggestions]);
   const filledFromExif = photoDay !== null && !dateMismatch;
 
   return (
-    <FormSection legend="3. Local e data" disabled={disabled} className="flex flex-col gap-4">
+    <FormSection legend={legend} disabled={disabled} className="flex flex-col gap-4">
       <Field htmlFor="market_name" label="Mercado">
         <TextInput
           id="market_name"

@@ -33,6 +33,12 @@ export interface PriceInput {
   has_valid_exif: boolean;
 }
 
+/** Dados da etiqueta que o admin pode corrigir depois; foto, hash e EXIF são a prova e não mudam. */
+export type PriceDetails = Pick<
+  PriceInput,
+  "brand" | "state_type" | "price_kind" | "price_per_kg" | "market_name" | "city" | "state" | "recorded_at"
+>;
+
 const text = (value: FormDataEntryValue | null, max = 80) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 
 /** Lê os campos crus do formulário, já aparados e com tamanho limitado. */
@@ -56,9 +62,14 @@ const isOneOf = (list: readonly string[], value: string) => list.includes(value)
 const isValidRecordedAt = (date: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= "2020-01-01" && date <= todayInBrazil();
 
-/** Primeira regra violada, na ordem em que os campos aparecem no formulário; null se tudo estiver certo. */
-function firstFieldError(fields: ReturnType<typeof readPriceFields>): string | null {
-  const rules: [valid: boolean, message: string][] = [
+type PriceFields = ReturnType<typeof readPriceFields>;
+type Rule = [valid: boolean, message: string];
+
+const firstBroken = (rules: Rule[]) => rules.find(([valid]) => !valid)?.[1] ?? null;
+
+/** Primeira regra violada nos dados da etiqueta, na ordem do formulário; null se tudo estiver certo. */
+function detailsError(fields: PriceFields): string | null {
+  return firstBroken([
     [Boolean(fields.brand), "Selecione a marca."],
     // "Outra" sozinha não diz nada: o formulário manda a marca digitada no lugar dela.
     [fields.brand !== OTHER_BRAND, "Digite qual é a marca."],
@@ -70,29 +81,38 @@ function firstFieldError(fields: ReturnType<typeof readPriceFields>): string | n
     [Boolean(fields.city), "Informe a cidade."],
     [isOneOf(UFS, fields.uf), "Selecione o estado (UF)."],
     [isValidRecordedAt(fields.recordedAt), "Data da coleta inválida (não pode ser no futuro)."],
+  ]);
+}
+
+/** Primeira regra violada na prova de auditoria da foto (hash e EXIF). */
+function proofError(fields: PriceFields): string | null {
+  return firstBroken([
     [/^[a-f0-9]{64}$/.test(fields.sha), "Hash SHA-256 ausente ou inválido. Selecione a foto novamente."],
     [!fields.exifDatetime || !Number.isNaN(Date.parse(fields.exifDatetime)), "Data EXIF inválida."],
-  ];
-  return rules.find(([valid]) => !valid)?.[1] ?? null;
+  ]);
 }
+
+const toDetails = (fields: PriceFields): PriceDetails => ({
+  brand: fields.brand,
+  state_type: fields.stateType as StateType,
+  price_kind: fields.priceKind as PriceKind,
+  price_per_kg: fields.price,
+  market_name: fields.market,
+  city: fields.city,
+  state: fields.uf,
+  recorded_at: fields.recordedAt,
+});
 
 /** Valida os campos do formulário (roda de novo no servidor — nunca confiar no cliente). */
 export function parsePriceForm(form: FormData): { data: PriceInput } | { error: string } {
   const fields = readPriceFields(form);
-  const error = firstFieldError(fields);
+  const error = detailsError(fields) ?? proofError(fields);
   if (error) return { error };
 
-  const { brand, stateType, priceKind, price, market, city, uf, recordedAt, sha, device, exifDatetime, hasValidExif } = fields;
+  const { sha, device, exifDatetime, hasValidExif } = fields;
   return {
     data: {
-      brand,
-      state_type: stateType as StateType,
-      price_kind: priceKind as PriceKind,
-      price_per_kg: price,
-      market_name: market,
-      city,
-      state: uf,
-      recorded_at: recordedAt,
+      ...toDetails(fields),
       original_sha256: sha,
       exif_device: hasValidExif ? device : null,
       exif_datetime: hasValidExif ? exifDatetime : null,
@@ -100,3 +120,16 @@ export function parsePriceForm(form: FormData): { data: PriceInput } | { error: 
     },
   };
 }
+
+/** Valida a correção de um cadastro: só os dados da etiqueta, com as mesmas regras do cadastro. */
+export function parsePriceDetails(form: FormData): { data: PriceDetails } | { error: string } {
+  const fields = readPriceFields(form);
+  const error = detailsError(fields);
+  if (error) return { error };
+  return { data: toDetails(fields) };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** O id chega do navegador: só segue adiante se tiver o formato de um id do banco. */
+export const isPriceId = (id: unknown): id is string => typeof id === "string" && UUID.test(id);

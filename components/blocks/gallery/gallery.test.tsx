@@ -22,6 +22,7 @@ function price(index: number, overrides: Partial<ChickenPrice> = {}): ChickenPri
     exif_datetime: "2026-11-02T14:00:00.000Z",
     has_valid_exif: true,
     created_at: "2026-11-02T15:00:00.000Z",
+    updated_at: null,
     ...overrides,
   };
 }

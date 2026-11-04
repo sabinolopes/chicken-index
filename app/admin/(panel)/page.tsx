@@ -4,7 +4,7 @@ import { Camera } from "lucide-react";
 import { RecentPrices, RecentPricesSkeleton } from "@/components/blocks/recent-prices";
 import { SettingsForm, SettingsFormSkeleton } from "@/components/blocks/settings-form";
 import { requireAdmin } from "@/modules/auth/session";
-import { listRecentPrices } from "@/modules/prices/queries";
+import { listFormSuggestions, listRecentPrices } from "@/modules/prices/queries";
 import { getSettings } from "@/modules/settings/queries";
 
 const RECENT_LIMIT = 30;
@@ -33,8 +33,8 @@ export default function AdminHomePage() {
 
 async function LatestPrices() {
   await requireAdmin();
-  const { prices, total } = await listRecentPrices(RECENT_LIMIT);
-  return <RecentPrices prices={prices} total={total} />;
+  const [{ prices, total }, suggestions] = await Promise.all([listRecentPrices(RECENT_LIMIT), listFormSuggestions()]);
+  return <RecentPrices prices={prices} total={total} suggestions={suggestions} />;
 }
 
 async function Wages() {

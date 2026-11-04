@@ -15,12 +15,15 @@ interface ProductStepProps {
   /** Marcas digitadas em cadastros anteriores, para não surgir "Oi Frango" e "oi frango" separados. */
   brandSuggestions: string[];
   disabled: boolean;
+  legend?: string;
+  /** Leva o foco ao campo "Qual marca?" quando ele aparece (no cadastro; na correção, abriria o teclado sozinho). */
+  focusOtherBrand?: boolean;
 }
 
 /** Etapa 2: preço do kg, tipo de preço (normal/oferta/clube), marca e resfriado/congelado. */
-export function ProductStep({ fields, setField, parsedPrice, brandSuggestions, disabled }: ProductStepProps) {
+export function ProductStep({ fields, setField, parsedPrice, brandSuggestions, disabled, legend = "2. Preço e produto", focusOtherBrand = true }: ProductStepProps) {
   return (
-    <FormSection legend="2. Preço e produto" disabled={disabled} className="flex flex-col gap-4">
+    <FormSection legend={legend} disabled={disabled} className="flex flex-col gap-4">
       <Field
         htmlFor="price_per_kg"
         label={
@@ -53,7 +56,7 @@ export function ProductStep({ fields, setField, parsedPrice, brandSuggestions, d
           options={BRANDS}
           value={fields.brand as (typeof BRANDS)[number]}
           onChange={(value) => setField("brand", value)}
-          className="grid-cols-2 min-[420px]:grid-cols-4"
+          className="grid-cols-3"
         />
       </Field>
 
@@ -63,7 +66,7 @@ export function ProductStep({ fields, setField, parsedPrice, brandSuggestions, d
             id="other-brand"
             list="brand-options"
             autoComplete="off"
-            autoFocus
+            autoFocus={focusOtherBrand}
             required
             maxLength={40}
             value={fields.otherBrand}

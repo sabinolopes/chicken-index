@@ -11,7 +11,7 @@ create extension if not exists "pgcrypto";
 -- ---------------------------------------------------------------------
 create table if not exists public.chicken_prices (
   id              uuid primary key default gen_random_uuid(),
-  -- Sadia/Seara/Perdigão ou o nome digitado em "Outra" (Oi Frango, Ki Frango...).
+  -- Sadia/Seara/Perdigão/Pif Paf ou o nome digitado em "Outra" (Oi Frango, Ki Frango...).
   brand           text not null default 'Outra' check (char_length(trim(brand)) between 2 and 40),
   state_type      text not null default 'resfriado'
                     check (state_type in ('resfriado', 'congelado')),
@@ -78,6 +78,14 @@ $$;
 drop trigger if exists economic_settings_set_updated_at on public.economic_settings;
 create trigger economic_settings_set_updated_at
   before update on public.economic_settings
+  for each row execute function public.set_updated_at();
+
+-- Correções do admin (preço digitado errado etc.): marca quando o registro foi
+-- editado; null = nunca editado. A foto, o hash e o EXIF não mudam.
+alter table public.chicken_prices add column if not exists updated_at timestamp with time zone;
+drop trigger if exists chicken_prices_set_updated_at on public.chicken_prices;
+create trigger chicken_prices_set_updated_at
+  before update on public.chicken_prices
   for each row execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------

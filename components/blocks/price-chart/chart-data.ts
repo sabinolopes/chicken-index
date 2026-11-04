@@ -10,6 +10,7 @@ export const BRAND_COLORS: Record<string, string> = {
   Sadia: "var(--series-1)",
   Seara: "var(--series-2)",
   Perdigão: "var(--series-3)",
+  "Pif Paf": "var(--series-7)",
   Outra: "var(--series-4)",
 };
 

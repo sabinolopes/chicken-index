@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { PhotoStorage } from "@/modules/photos/storage";
 import type { PricesRepository } from "@/modules/prices/repository";
-import { registerPrice, removePrice } from "@/modules/prices/service";
-import type { PriceInput } from "@/modules/prices/validation";
+import { editPrice, registerPrice, removePrice } from "@/modules/prices/service";
+import type { PriceDetails, PriceInput } from "@/modules/prices/validation";
 
 const HASH = "ab".repeat(32);
 const PUBLIC_URL = "https://pub-teste.r2.dev";
@@ -47,6 +47,13 @@ function memoryPrices(options: { failOn?: keyof PricesRepository } = {}) {
     async remove(id) {
       failIf("remove");
       rows.delete(id);
+    },
+    async update(id, details) {
+      failIf("update");
+      const row = rows.get(id);
+      if (!row) return false;
+      rows.set(id, { ...row, ...details });
+      return true;
     },
   };
   return { repository, rows };
@@ -183,5 +190,41 @@ describe("removePrice", () => {
 
     expect(result).toEqual({ ok: false, error: "Falha ao excluir: banco fora do ar (remove)" });
     expect(photos.files.size).toBe(1);
+  });
+});
+
+describe("editPrice", () => {
+  const details: PriceDetails = {
+    brand: "Pif Paf",
+    state_type: "congelado",
+    price_kind: "regular",
+    price_per_kg: 19.69,
+    market_name: "Unidos",
+    city: "Itaperuna",
+    state: "RJ",
+    recorded_at: "2026-11-02",
+  };
+  const corrected = { ...input, ...details };
+
+  it("corrige os dados da etiqueta e mantém a foto e a prova de auditoria", async () => {
+    const prices = memoryPrices();
+    prices.rows.set("id-1", { ...input, photo_url: `${PUBLIC_URL}/foto.webp` });
+
+    const result = await editPrice({ id: "id-1", details, prices: prices.repository });
+
+    expect(result).toEqual({ ok: true, message: "Cadastro corrigido." });
+    expect(prices.rows.get("id-1")).toEqual({ ...corrected, photo_url: `${PUBLIC_URL}/foto.webp` });
+  });
+
+  it("avisa quando o registro não existe (ex.: excluído por outro admin)", async () => {
+    const prices = memoryPrices();
+    const result = await editPrice({ id: "id-9", details, prices: prices.repository });
+    expect(result).toEqual({ ok: false, error: "Registro não encontrado." });
+  });
+
+  it("repassa a falha do banco sem fingir que salvou", async () => {
+    const prices = memoryPrices({ failOn: "update" });
+    const result = await editPrice({ id: "id-1", details, prices: prices.repository });
+    expect(result).toEqual({ ok: false, error: "Falha ao salvar a correção: banco fora do ar (update)" });
   });
 });

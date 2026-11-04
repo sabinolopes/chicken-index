@@ -24,6 +24,7 @@ function price(recordedAt: string, pricePerKg: number, options: { brand?: string
     exif_datetime: null,
     has_valid_exif: options.audited ?? true,
     created_at: `${recordedAt}T12:00:00Z`,
+    updated_at: null,
   };
 }
 

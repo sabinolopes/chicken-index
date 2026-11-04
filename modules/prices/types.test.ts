@@ -16,6 +16,8 @@ describe("normalizeBrand", () => {
   it("usa a grafia oficial das marcas principais, mesmo digitadas em 'Outra'", () => {
     expect(normalizeBrand("sadia")).toBe("Sadia");
     expect(normalizeBrand("PERDIGAO")).toBe("Perdigão");
+    expect(normalizeBrand("PifPaf")).toBe("Pif Paf");
+    expect(normalizeBrand("pif  paf")).toBe("Pif Paf");
   });
 
   it("corta em 40 caracteres", () => {
@@ -26,6 +28,7 @@ describe("normalizeBrand", () => {
 describe("brandGroup", () => {
   it("marcas principais têm grupo próprio; as demais entram em 'Outra'", () => {
     expect(brandGroup("Seara")).toBe("Seara");
+    expect(brandGroup("Pif Paf")).toBe("Pif Paf");
     expect(brandGroup("Oi Frango")).toBe("Outra");
     expect(brandGroup("Outra")).toBe("Outra");
   });

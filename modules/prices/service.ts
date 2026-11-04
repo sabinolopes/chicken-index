@@ -3,7 +3,7 @@ import { formatDate } from "@/lib/format";
 import { photoKeyFor, photoKeyFromUrl } from "@/modules/photos/keys";
 import type { PhotoStorage } from "@/modules/photos/storage";
 import type { PricesRepository } from "./repository";
-import type { PriceInput } from "./validation";
+import type { PriceDetails, PriceInput } from "./validation";
 
 export type RegisterPriceResult = { ok: true; message: string; record: PriceInput } | ActionFailure;
 
@@ -74,4 +74,22 @@ export async function removePrice({ id, prices, photos }: RemovePriceOptions): P
     return failure(`Registro excluído, mas a foto ficou no armazenamento (${errorMessage(error)}).`);
   }
   return success("Registro excluído.");
+}
+
+interface EditPriceOptions {
+  id: string;
+  details: PriceDetails;
+  prices: PricesRepository;
+}
+
+/** Corrige os dados da etiqueta (preço digitado errado, marca, mercado...). A foto e a auditoria não mudam. */
+export async function editPrice({ id, details, prices }: EditPriceOptions): Promise<ActionResult> {
+  let updated: boolean;
+  try {
+    updated = await prices.update(id, details);
+  } catch (error) {
+    return failure(`Falha ao salvar a correção: ${errorMessage(error)}`);
+  }
+  if (!updated) return failure("Registro não encontrado.");
+  return success("Cadastro corrigido.");
 }

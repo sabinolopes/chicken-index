@@ -6,8 +6,8 @@ import { requireAdmin } from "@/modules/auth/session";
 import { refreshDashboard } from "@/modules/dashboard/cache";
 import { r2PhotoStorage } from "@/modules/photos/storage";
 import { createPricesRepository } from "./repository";
-import { registerPrice, removePrice, type RegisterPriceResult } from "./service";
-import { parsePhotoFile, parsePriceForm } from "./validation";
+import { editPrice, registerPrice, removePrice, type RegisterPriceResult } from "./service";
+import { isPriceId, parsePhotoFile, parsePriceDetails, parsePriceForm } from "./validation";
 
 // Camada fina: confere o admin, valida a entrada, chama o serviço e atualiza o cache.
 
@@ -32,5 +32,18 @@ export async function deletePrice(id: string): Promise<ActionResult> {
   const result = await removePrice({ id, prices, photos: r2PhotoStorage });
   // Mesmo com aviso sobre a foto, o registro pode já ter saído do banco.
   refreshDashboard();
+  return result;
+}
+
+export async function updatePrice(id: string, form: FormData): Promise<ActionResult> {
+  await requireAdmin();
+
+  if (!isPriceId(id)) return failure("Registro não encontrado.");
+  const parsed = parsePriceDetails(form);
+  if ("error" in parsed) return failure(parsed.error);
+
+  const prices = createPricesRepository(await createServerSupabase());
+  const result = await editPrice({ id, details: parsed.data, prices });
+  if (result.ok) refreshDashboard();
   return result;
 }
