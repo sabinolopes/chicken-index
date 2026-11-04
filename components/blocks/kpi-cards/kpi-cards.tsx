@@ -1,6 +1,7 @@
 import { BadgeCheck, CalendarDays } from "lucide-react";
 import type { Kpis } from "@/modules/dashboard/stats";
 import { formatBRL, formatPct, formatShortDate } from "@/lib/format";
+import { weeklyNote } from "./kpi-text";
 import { trendOf } from "./trend";
 
 function Trend({ pct, label }: { pct: number; label: string }) {
@@ -28,7 +29,7 @@ export function KpiCards({ kpis }: { kpis: Kpis }) {
         <p className="text-3xl sm:text-4xl font-bold tracking-tight tabular">{formatPct(kpis.accumulatedPct)}</p>
         <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
           <Trend pct={kpis.accumulatedPct} label={trendOf(kpis.accumulatedPct).label} />
-          desde {formatShortDate(kpis.firstWeek)} ({formatBRL(kpis.firstAvg)})
+          mesmos mercados e marcas desde {formatShortDate(kpis.firstWeek)}
         </p>
       </Tile>
 
@@ -37,14 +38,8 @@ export function KpiCards({ kpis }: { kpis: Kpis }) {
           {kpis.weeklyPct === null ? "—" : formatPct(kpis.weeklyPct)}
         </p>
         <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
-          {kpis.previousAvg !== null && kpis.weeklyPct !== null ? (
-            <>
-              <Trend pct={kpis.weeklyPct} label="vs. semana anterior" />
-              {formatBRL(kpis.previousAvg)}
-            </>
-          ) : (
-            "Apenas uma semana de dados"
-          )}
+          {kpis.weeklyPct !== null && <Trend pct={kpis.weeklyPct} label="vs. semana anterior" />}
+          {weeklyNote(kpis)}
         </p>
       </Tile>
 

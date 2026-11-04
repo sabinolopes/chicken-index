@@ -5,7 +5,7 @@ import type { ShareSummary } from "./draw-card";
 export function shareText({ kpis, filterLabel, site }: Omit<ShareSummary, "settings">) {
   return [
     `🐔 *Frangômetro*: preço do peito de frango${filterLabel ? ` — ${filterLabel}` : ""}`,
-    `Preço médio do kg (sem promoções): *${formatBRL(kpis.currentAvg)}* (${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)})`,
+    `Preço médio do kg (sem promoções): *${formatBRL(kpis.currentAvg)}* (${formatPct(kpis.accumulatedPct)} desde ${formatShortDate(kpis.firstWeek)} nos mesmos mercados)`,
     `Salário mínimo comprava ${formatKg(kpis.minWageKg.start)}, hoje compra ${formatKg(kpis.minWageKg.now)}.`,
     `Salário médio comprava ${formatKg(kpis.avgWageKg.start)}, hoje compra ${formatKg(kpis.avgWageKg.now)}.`,
     "Fotos auditadas com EXIF + SHA-256.",

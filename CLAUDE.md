@@ -60,6 +60,7 @@ Quando o admin seleciona uma foto no formulário (`/admin/novo`):
 ## 5. Estrutura de Telas
 1. **Dashboard Público (`/`):**
    - **Header & Poder de Compra:** Cards destacando o Preço Médio Atual do Kg, Variação Acumulada (%) desde a 1ª semana, e o "Termômetro Salarial": Quantos Kg de peito de frango 1 Salário Mínimo e 1 Salário Médio compravam no início do projeto vs. hoje.
+     - **Método do índice (`sameProductIndex` em `modules/dashboard/stats.ts`):** o preço médio e o gráfico mostram a média do que foi coletado, mas as variações e o termômetro seguem um índice encadeado de **mesmos produtos** (mercado + cidade/UF + marca + resfriado/congelado), como o IPCA: cada produto é comparado com o próprio último preço e a semana usa a média geométrica dessas variações. Assim, coletar um mercado mais caro ou mais barato não mexe no índice. Sem produto repetido, a variação semanal fica vazia (não 0%).
    - **Filtros Rápidos:** Por Estado/Cidade, Mercado e Marca.
    - **Gráfico de Evolução (Recharts):** Linha do tempo semanal mostrando a evolução do preço médio e linhas comparativas por marca.
    - **Galeria de Prova Real:** Grid de cards com a foto da etiqueta, preço/kg em destaque, mercado, cidade, data e badge "Foto Auditada (EXIF + SHA256)". Ao clicar, abre um Modal com Lupa/Zoom na etiqueta e os dados técnicos da câmera.

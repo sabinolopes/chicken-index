@@ -60,7 +60,7 @@ export function drawCard(context: CanvasRenderingContext2D, { kpis, settings, fi
 
   context.fillStyle = "#57534e";
   context.font = font(400, 32);
-  context.fillText(`Era ${formatBRL(kpis.firstAvg)} na 1ª semana`, pad, 620);
+  context.fillText("Variação nos mesmos mercados e marcas", pad, 620);
 
   // Termômetro salarial
   context.strokeStyle = "#e7e2da";

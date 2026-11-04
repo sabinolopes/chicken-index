@@ -8,12 +8,23 @@ export interface WeeklyPoint {
   byBrand: Record<string, number>;
 }
 
+/** Ponto do índice de mesmos produtos: 100 na primeira semana. */
+export interface IndexPoint {
+  week: string;
+  index: number;
+  /** Produtos da semana que já tinham preço antes (os que entram na conta). */
+  compared: number;
+}
+
 export interface Kpis {
   currentAvg: number;
   firstAvg: number;
-  previousAvg: number | null;
+  /** Variação do índice de mesmos produtos desde a primeira semana. */
   accumulatedPct: number;
+  /** Variação do índice na última semana; null sem semana anterior ou sem produto repetido. */
   weeklyPct: number | null;
+  /** Produtos da última semana comparados com o próprio preço anterior. */
+  comparedProducts: number;
   firstWeek: string;
   currentWeek: string;
   weeks: number;
@@ -62,6 +73,49 @@ export function weeklySeries(prices: ChickenPrice[]): WeeklyPoint[] {
     });
 }
 
+/**
+ * Mesmo produto no mesmo lugar: mercado, cidade/UF, marca e resfriado/congelado.
+ * Caixa e espaços não importam ("Lizeu" = " lizeu ").
+ */
+export const productKey = (price: ChickenPrice) =>
+  [price.market_name, price.city, price.state, price.brand, price.state_type]
+    .map((part) => part.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR"))
+    .join("|");
+
+const geometricMean = (values: number[]) => Math.exp(mean(values.map(Math.log)));
+
+/** Preço de cada produto em cada semana (média, se foi coletado mais de uma vez), em ordem cronológica. */
+function weeklyProductPrices(prices: ChickenPrice[]) {
+  const weeks = new Map<string, Map<string, number[]>>();
+  for (const price of prices) {
+    const week = weekStart(price.recorded_at);
+    const products = weeks.get(week) ?? new Map<string, number[]>();
+    const key = productKey(price);
+    products.set(key, [...(products.get(key) ?? []), price.price_per_kg]);
+    weeks.set(week, products);
+  }
+  return [...weeks.entries()]
+    .sort(([firstWeek], [secondWeek]) => firstWeek.localeCompare(secondWeek))
+    .map(([week, products]) => ({ week, products: [...products].map(([key, values]) => ({ key, price: mean(values) })) }));
+}
+
+/**
+ * Índice encadeado de mesmos produtos (como o IPCA): cada produto é comparado com o
+ * próprio último preço, e a variação da semana é a média geométrica dessas variações.
+ * Assim o índice não sobe só porque a semana coletou um mercado mais caro, nem cai
+ * porque um mercado barato entrou. Produto novo só passa a contar na volta seguinte.
+ */
+export function sameProductIndex(prices: ChickenPrice[]): IndexPoint[] {
+  const lastPrice = new Map<string, number>();
+  let index = 100;
+  return weeklyProductPrices(prices).map(({ week, products }) => {
+    const ratios = products.filter(({ key }) => lastPrice.has(key)).map(({ key, price }) => price / (lastPrice.get(key) ?? price));
+    if (ratios.length > 0) index *= geometricMean(ratios);
+    for (const { key, price } of products) lastPrice.set(key, price);
+    return { week, index, compared: ratios.length };
+  });
+}
+
 function kgComparison(wage: number, startPrice: number, nowPrice: number) {
   const start = wage / startPrice;
   const now = wage / nowPrice;
@@ -71,9 +125,16 @@ function kgComparison(wage: number, startPrice: number, nowPrice: number) {
 /** Preços que entram no índice: só o preço normal de gôndola (ofertas e clube ficam de fora). */
 export const isIndexPrice = (price: ChickenPrice) => price.price_kind === "regular";
 
+/** Variação semanal do índice; sem produto repetido não há como medir (null, não 0%). */
+function weeklyChange(current: IndexPoint, previous: IndexPoint | undefined) {
+  if (!previous || current.compared === 0) return null;
+  return (current.index / previous.index - 1) * 100;
+}
+
 /**
- * KPIs do índice. As médias usam só preços normais; as contagens de registros e
- * fotos auditadas consideram todos os registros do recorte.
+ * KPIs do índice. Preço médio e gráfico mostram a média do que foi coletado; as
+ * variações e o poder de compra seguem o índice de mesmos produtos. Tudo só com
+ * preços normais; as contagens de registros e fotos auditadas consideram o recorte todo.
  */
 export function computeKpis(prices: ChickenPrice[], settings: EconomicSettings): Kpis | null {
   const indexPrices = prices.filter(isIndexPrice);
@@ -82,21 +143,24 @@ export function computeKpis(prices: ChickenPrice[], settings: EconomicSettings):
 
   const first = series[0];
   const current = series[series.length - 1];
-  const previous = series.length > 1 ? series[series.length - 2] : null;
+  const index = sameProductIndex(indexPrices);
+  const currentIndex = index[index.length - 1];
+  // Preço da cesta da 1ª semana corrigido pelo índice: base do poder de compra hoje.
+  const comparablePrice = first.average * (currentIndex.index / 100);
 
   return {
     currentAvg: current.average,
     firstAvg: first.average,
-    previousAvg: previous?.average ?? null,
-    accumulatedPct: ((current.average - first.average) / first.average) * 100,
-    weeklyPct: previous ? ((current.average - previous.average) / previous.average) * 100 : null,
+    accumulatedPct: currentIndex.index - 100,
+    weeklyPct: weeklyChange(currentIndex, index[index.length - 2]),
+    comparedProducts: currentIndex.compared,
     firstWeek: first.week,
     currentWeek: current.week,
     weeks: series.length,
     records: prices.length,
     audited: prices.filter((price) => price.has_valid_exif).length,
     promoCount: prices.length - indexPrices.length,
-    minWageKg: kgComparison(settings.min_wage, first.average, current.average),
-    avgWageKg: kgComparison(settings.avg_wage, first.average, current.average),
+    minWageKg: kgComparison(settings.min_wage, first.average, comparablePrice),
+    avgWageKg: kgComparison(settings.avg_wage, first.average, comparablePrice),
   };
 }

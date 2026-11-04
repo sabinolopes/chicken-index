@@ -16,7 +16,7 @@ describe("shareText", () => {
 
     expect(text.split("\n")).toEqual([
       "🐔 *Frangômetro*: preço do peito de frango — Sadia · Itaperuna",
-      "Preço médio do kg (sem promoções): *R$ 25,00* (+25,0% desde 02/nov)",
+      "Preço médio do kg (sem promoções): *R$ 25,00* (+25,0% desde 02/nov nos mesmos mercados)",
       "Salário mínimo comprava 75,0 kg, hoje compra 60,0 kg.",
       "Salário médio comprava 150,0 kg, hoje compra 120,0 kg.",
       "Fotos auditadas com EXIF + SHA-256.",
