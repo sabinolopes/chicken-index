@@ -1,28 +1,21 @@
-import Link from "next/link";
-import { ArrowLeft, Drumstick } from "lucide-react";
 import type { ReactNode } from "react";
+import { SiteHeader } from "@/components/blocks/site-header";
 
 /** Página "Como medimos": o método do índice em linguagem simples, para quem quiser conferir os números. */
 export function Methodology() {
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-border bg-surface">
+      <SiteHeader current="como-medimos" />
+      <section className="border-b border-border bg-surface">
         <div className="mx-auto max-w-3xl px-4 py-6 sm:py-8">
-          <Link href="/" className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
-            <ArrowLeft className="size-4" aria-hidden />
-            Voltar ao Frangômetro
-          </Link>
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
-            <Drumstick className="size-4" aria-hidden />
-            Metodologia
-          </div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-accent">Metodologia</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">Como medimos</h1>
           <p className="mt-2 text-muted">
             Cada número do Frangômetro sai de uma etiqueta fotografada no mercado. Aqui está como coletamos, auditamos e
             calculamos, para qualquer pessoa conferir.
           </p>
         </div>
-      </header>
+      </section>
 
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-8 px-4 py-8 leading-relaxed">
         <Section title="O que medimos">
