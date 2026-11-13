@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Camera } from "lucide-react";
-import { RecentPrices, RecentPricesSkeleton } from "@/components/blocks/recent-prices";
+import { RecentPrices, RecentPricesSkeleton, shownCount } from "@/components/blocks/recent-prices";
 import { SettingsForm, SettingsFormSkeleton } from "@/components/blocks/settings-form";
 import { requireAdmin } from "@/modules/auth/session";
 import { listFormSuggestions, listRecentPrices } from "@/modules/prices/queries";
 import { getSettings } from "@/modules/settings/queries";
 
-const RECENT_LIMIT = 30;
+type UrlQuery = PageProps<"/admin">["searchParams"];
 
-export default function AdminHomePage() {
+export default function AdminHomePage({ searchParams }: PageProps<"/admin">) {
   return (
     <div className="space-y-6">
       <Link
@@ -20,20 +20,22 @@ export default function AdminHomePage() {
         Cadastrar novo preço
       </Link>
 
-      {/* Cada bloco carrega e aparece por conta própria. */}
-      <Suspense fallback={<RecentPricesSkeleton />}>
-        <LatestPrices />
-      </Suspense>
+      {/* Cada bloco carrega e aparece por conta própria. Salários ficam no alto, compactos:
+          a lista cresce com o tempo e não pode empurrá-los para o fim da página. */}
       <Suspense fallback={<SettingsFormSkeleton />}>
         <Wages />
+      </Suspense>
+      <Suspense fallback={<RecentPricesSkeleton />}>
+        <LatestPrices searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function LatestPrices() {
+async function LatestPrices({ searchParams }: { searchParams: UrlQuery }) {
   await requireAdmin();
-  const [{ prices, total }, suggestions] = await Promise.all([listRecentPrices(RECENT_LIMIT), listFormSuggestions()]);
+  const shown = shownCount((await searchParams).mostrar);
+  const [{ prices, total }, suggestions] = await Promise.all([listRecentPrices(shown), listFormSuggestions()]);
   return <RecentPrices prices={prices} total={total} suggestions={suggestions} />;
 }
 

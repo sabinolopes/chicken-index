@@ -1,15 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { BadgeCheck, Loader2, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import { EditPriceDialog } from "@/components/blocks/edit-price";
 import { Alert } from "@/components/elements/alert";
-import { IconButton } from "@/components/elements/button";
+import { buttonClass, IconButton } from "@/components/elements/button";
 import { Panel, PanelHeader } from "@/components/elements/panel";
 import { formatBRL, formatDate } from "@/lib/format";
 import { deletePrice } from "@/modules/prices/actions";
 import type { FormSuggestions } from "@/modules/prices/queries";
 import { PRICE_KIND_LABEL, type ChickenPrice } from "@/modules/prices/types";
+import { MAX_SHOWN, nextShownCount, PAGE_SIZE } from "./page-size";
 
 interface RecentPricesProps {
   prices: ChickenPrice[];
@@ -84,7 +86,29 @@ export function RecentPrices({ prices, total, suggestions }: RecentPricesProps) 
         </ul>
       )}
 
+      {prices.length > 0 && <ListFooter shown={prices.length} total={total} />}
+
       {editing && <EditPriceDialog price={editing} suggestions={suggestions} onClose={() => setEditing(null)} />}
     </Panel>
+  );
+}
+
+/**
+ * Rodapé da lista: quantos estão na tela e o "Mostrar mais". A quantidade vai na URL
+ * (`?mostrar=`), então editar ou excluir recarrega a lista certa do servidor.
+ */
+function ListFooter({ shown, total }: { shown: number; total: number }) {
+  const next = nextShownCount(shown, total);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 text-sm text-subtle">
+      <span className="tabular">
+        {shown >= MAX_SHOWN && total > MAX_SHOWN ? `Mostrando os ${MAX_SHOWN} mais recentes` : `Mostrando ${shown} de ${total}`}
+      </span>
+      {next !== null && (
+        <Link href={`/admin?mostrar=${next}`} scroll={false} className={buttonClass("secondary")}>
+          Mostrar mais {Math.min(PAGE_SIZE, total - shown)}
+        </Link>
+      )}
+    </div>
   );
 }
