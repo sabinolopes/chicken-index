@@ -13,6 +13,7 @@ export function fieldsFromPrice(price: ChickenPrice): PriceFields {
     stateType: price.state_type,
     priceKind: price.price_kind,
     market: price.market_name,
+    newMarket: false,
     city: price.city,
     uf: price.state,
     recordedAt: price.recorded_at,

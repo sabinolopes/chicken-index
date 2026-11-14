@@ -42,15 +42,17 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: readonly string[];
   /** Primeira opção, de valor vazio (ex.: "—" ou "Todos os mercados"). */
   emptyLabel: string;
+  /** Texto de opções que não devem mostrar o próprio valor (ex.: uma opção especial). */
+  labels?: Readonly<Record<string, string>>;
 }
 
-export function Select({ options, emptyLabel, className = "", ...rest }: SelectProps) {
+export function Select({ options, emptyLabel, labels, className = "", ...rest }: SelectProps) {
   return (
     <select className={`${inputClass} ${className}`.trim()} {...rest}>
       <option value="">{emptyLabel}</option>
       {options.map((option) => (
         <option key={option} value={option}>
-          {option}
+          {labels?.[option] ?? option}
         </option>
       ))}
     </select>

@@ -65,7 +65,7 @@ export function useNewPriceForm(suggestions: FormSuggestions) {
   function resetForNext() {
     discardPhoto();
     setResult(null);
-    setFields((current) => ({ ...EMPTY_FIELDS, market: current.market, city: current.city, uf: current.uf, stateType: current.stateType }));
+    setFields((current) => ({ ...EMPTY_FIELDS, market: current.market, newMarket: current.newMarket, city: current.city, uf: current.uf, stateType: current.stateType }));
   }
 
   const parsedPrice = parsePrice(fields.price);

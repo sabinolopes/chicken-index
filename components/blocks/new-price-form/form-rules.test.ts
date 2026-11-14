@@ -5,6 +5,7 @@ import {
   dateDiffersFromPhoto,
   EMPTY_FIELDS,
   isReadyToSubmit,
+  marketChoices,
   placeOptions,
   priceLooksWrong,
 } from "@/components/blocks/new-price-form/form-rules";
@@ -92,5 +93,16 @@ describe("placeOptions", () => {
       { market_name: "Assaí", city: "Itaperuna", state: "RJ" },
     ]);
     expect(options).toEqual({ markets: ["Unidos", "Assaí"], cities: ["Itaperuna"] });
+  });
+});
+
+describe("marketChoices", () => {
+  it("lista os mercados conhecidos em ordem alfabética, com acentos do português", () => {
+    expect(marketChoices(["Unidos", "Ébano", "Assaí"], "")).toEqual(["Assaí", "Ébano", "Unidos"]);
+  });
+
+  it("inclui o mercado atual se ele não estiver na lista, sem repetir", () => {
+    expect(marketChoices(["Unidos"], "Lizeu")).toEqual(["Lizeu", "Unidos"]);
+    expect(marketChoices(["Unidos"], "Unidos")).toEqual(["Unidos"]);
   });
 });

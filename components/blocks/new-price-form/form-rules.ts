@@ -12,6 +12,8 @@ export interface PriceFields {
   stateType: StateType;
   priceKind: PriceKind;
   market: string;
+  /** Mercado que ainda não está na lista: o admin digita o nome. */
+  newMarket: boolean;
   city: string;
   uf: string;
   recordedAt: string;
@@ -24,6 +26,7 @@ export const EMPTY_FIELDS: PriceFields = {
   stateType: "resfriado",
   priceKind: "regular",
   market: "",
+  newMarket: false,
   city: "",
   uf: "",
   recordedAt: "",
@@ -73,6 +76,18 @@ export function appendPhoto(formData: FormData, photo: ProcessedPhoto) {
   formData.set("exif_device", photo.exif.device ?? "");
   formData.set("exif_datetime", photo.exif.datetime?.toISOString() ?? "");
   return formData;
+}
+
+/** Valor da opção "Outro mercado" no select (não é nome de mercado de verdade). */
+export const NEW_MARKET = "__novo__";
+
+/**
+ * Mercados da lista, em ordem alfabética. Inclui o mercado atual se ele não estiver entre
+ * os conhecidos (ex.: lembrado deste aparelho), para o select não aparecer em branco.
+ */
+export function marketChoices(known: string[], current: string) {
+  const all = current && !known.includes(current) ? [...known, current] : known;
+  return [...new Set(all)].sort((first, second) => first.localeCompare(second, "pt-BR"));
 }
 
 /** Mercados e cidades já usados, para o autocompletar. */

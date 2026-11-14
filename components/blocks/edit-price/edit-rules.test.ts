@@ -30,6 +30,7 @@ describe("fieldsFromPrice", () => {
       stateType: "congelado",
       priceKind: "oferta",
       market: "Lizeu",
+      newMarket: false,
       city: "Itaperuna",
       uf: "RJ",
       recordedAt: "2026-11-04",
