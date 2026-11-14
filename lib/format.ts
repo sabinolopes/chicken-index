@@ -3,6 +3,9 @@ const oneDecimal = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, ma
 
 export const formatBRL = (value: number) => brl.format(value);
 
+/** 1 → "1 semana"; 2 → "2 semanas". */
+export const countLabel = (count: number, singular: string, plural: string) => `${count} ${count === 1 ? singular : plural}`;
+
 export const formatKg = (value: number) => `${oneDecimal.format(value)} kg`;
 
 export function formatPct(value: number, withSign = true) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { centsFromNumber, formatDate, formatPct, formatShortDate, maskCents } from "@/lib/format";
+import { centsFromNumber, countLabel, formatDate, formatPct, formatShortDate, maskCents } from "@/lib/format";
 
 describe("maskCents", () => {
   it("preenche os dígitos da direita para a esquerda, como uma maquininha", () => {
@@ -39,5 +39,13 @@ describe("datas e percentuais", () => {
     expect(formatPct(-2)).toBe("-2,0%");
     expect(formatPct(0)).toBe("0,0%");
     expect(formatPct(4.25, false)).toBe("4,3%");
+  });
+});
+
+describe("countLabel", () => {
+  it("usa o singular só para 1", () => {
+    expect(countLabel(1, "semana", "semanas")).toBe("1 semana");
+    expect(countLabel(0, "registro", "registros")).toBe("0 registros");
+    expect(countLabel(8, "registro", "registros")).toBe("8 registros");
   });
 });

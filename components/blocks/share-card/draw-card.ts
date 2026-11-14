@@ -1,6 +1,6 @@
 import type { Kpis } from "@/modules/dashboard/stats";
 import type { EconomicSettings } from "@/modules/settings/types";
-import { formatBRL, formatKg, formatPct, formatShortDate } from "@/lib/format";
+import { countLabel, formatBRL, formatKg, formatPct, formatShortDate } from "@/lib/format";
 
 export const CARD_WIDTH = 1080;
 export const CARD_HEIGHT = 1350; // 4:5 — formato de feed do Instagram, também ok no WhatsApp
@@ -102,5 +102,5 @@ export function drawCard(context: CanvasRenderingContext2D, { kpis, settings, fi
   context.fillStyle = "#8a847d";
   context.font = font(400, 28);
   context.fillText(`${kpis.records} etiquetas fotografadas · ${kpis.audited} com EXIF auditado + SHA-256`, pad, CARD_HEIGHT - 120);
-  context.fillText(`${kpis.weeks} semanas · semana atual: ${formatShortDate(kpis.currentWeek)}`, pad, CARD_HEIGHT - 76);
+  context.fillText(`${countLabel(kpis.weeks, "semana", "semanas")} · semana atual: ${formatShortDate(kpis.currentWeek)}`, pad, CARD_HEIGHT - 76);
 }

@@ -1,6 +1,6 @@
 import { BadgeCheck, CalendarDays } from "lucide-react";
 import type { Kpis } from "@/modules/dashboard/stats";
-import { formatBRL, formatPct, formatShortDate } from "@/lib/format";
+import { countLabel, formatBRL, formatPct, formatShortDate } from "@/lib/format";
 import { weeklyNote } from "./kpi-text";
 import { trendOf } from "./trend";
 
@@ -50,7 +50,7 @@ export function KpiCards({ kpis }: { kpis: Kpis }) {
         </p>
         <p className="mt-2 flex items-center gap-1 text-xs text-subtle">
           <BadgeCheck className="size-3.5 text-emerald-700" aria-hidden />
-          com EXIF original · {kpis.weeks} semanas
+          com EXIF original · {countLabel(kpis.weeks, "semana", "semanas")}
         </p>
       </Tile>
     </section>

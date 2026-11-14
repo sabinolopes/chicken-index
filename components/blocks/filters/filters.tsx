@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react";
 import { MapPin, RotateCcw, Store, Tag } from "lucide-react";
-import { ChoiceGroup } from "@/components/elements/choice-group";
+import { countLabel } from "@/lib/format";
 import { Panel } from "@/components/elements/panel";
 import type { ChickenPrice } from "@/modules/prices/types";
 import { changeFilter, EMPTY_FILTERS, filterOptions, type FilterState } from "./filter-options";
@@ -22,7 +22,7 @@ export function Filters({ prices, value, onChange, resultCount }: FiltersProps) 
   return (
     <Panel ariaLabel="Filtros" padding="compact">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:flex-none">
+        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-none">
           <FilterSelect
             label="Estado"
             icon={<MapPin className="size-4" aria-hidden />}
@@ -30,8 +30,9 @@ export function Filters({ prices, value, onChange, resultCount }: FiltersProps) 
             onChange={update("state")}
             options={options.states}
             allLabel="UF: todas"
+            className="lg:w-40"
           />
-          <FilterSelect label="Cidade" value={value.city} onChange={update("city")} options={options.cities} allLabel="Cidade: todas" />
+          <FilterSelect label="Cidade" value={value.city} onChange={update("city")} options={options.cities} allLabel="Cidade: todas" className="lg:w-40" />
           <FilterSelect
             label="Mercado"
             icon={<Store className="size-4" aria-hidden />}
@@ -39,22 +40,23 @@ export function Filters({ prices, value, onChange, resultCount }: FiltersProps) 
             onChange={update("market")}
             options={options.markets}
             allLabel="Todos os mercados"
-            className="col-span-2 sm:col-span-1"
+            className="col-span-2 sm:col-span-1 lg:w-56"
+          />
+          {/* Marca em lista, como os outros filtros: novas marcas (Oi Frango, Ki Frango...)
+              entram no menu sem fazer a barra crescer. */}
+          <FilterSelect
+            label="Marca"
+            icon={<Tag className="size-4" aria-hidden />}
+            value={value.brand}
+            onChange={update("brand")}
+            options={options.brands}
+            allLabel="Todas as marcas"
+            className="col-span-2 sm:col-span-1 lg:w-52"
           />
         </div>
 
-        <ChoiceGroup
-          label="Marca"
-          variant="pill"
-          options={["", ...options.brands]}
-          labels={{ "": "Todas" }}
-          value={value.brand}
-          onChange={update("brand")}
-          leading={<Tag className="mr-0.5 size-4 text-subtle" aria-hidden />}
-        />
-
-        <div className="flex items-center gap-3 text-sm text-subtle lg:ml-auto">
-          <span className="tabular">{resultCount} registros</span>
+        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap text-sm text-subtle lg:ml-auto">
+          <span className="tabular">{countLabel(resultCount, "registro", "registros")}</span>
           {active && (
             <button
               type="button"
@@ -81,16 +83,20 @@ interface FilterSelectProps {
   className?: string;
 }
 
-/** Select compacto com ícone e rótulo só para leitor de tela. */
+/**
+ * Select compacto com ícone e rótulo só para leitor de tela. No desktop a largura é fixa
+ * (via className): sem isso, o select cresce até o nome mais longo da lista e um mercado
+ * como "SUPERMERCADOS FLUMINENSE" empurra marcas e contagem para outra linha.
+ */
 function FilterSelect({ label, icon, value, onChange, options, allLabel, className = "" }: FilterSelectProps) {
   return (
-    <label className={`relative flex items-center ${className}`}>
+    <label className={`relative flex min-w-0 items-center ${className}`}>
       <span className="sr-only">{label}</span>
       {icon && <span className="pointer-events-none absolute left-2.5 text-subtle">{icon}</span>}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`w-full rounded-lg border border-border bg-surface py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-stone-400 lg:w-auto ${icon ? "pl-8" : "pl-3"}`}
+        className={`w-full rounded-lg border border-border bg-surface py-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-stone-400 text-ellipsis ${icon ? "pl-8" : "pl-3"}`}
       >
         <option value="">{allLabel}</option>
         {options.map((option) => (
