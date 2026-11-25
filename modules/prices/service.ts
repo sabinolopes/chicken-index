@@ -60,11 +60,14 @@ export async function removePrice({ id, prices, photos }: RemovePriceOptions): P
   const photoUrl = await prices.findPhotoUrl(id).catch(() => null);
   if (!photoUrl) return failure("Registro não encontrado.");
 
+  let removed: boolean;
   try {
-    await prices.remove(id);
+    removed = await prices.remove(id);
   } catch (error) {
     return failure(`Falha ao excluir: ${errorMessage(error)}`);
   }
+  // Só apaga a foto se o registro saiu mesmo; senão ficaria um registro com a imagem quebrada.
+  if (!removed) return failure("O banco não excluiu o registro (sem permissão ou já excluído). Entre de novo e tente outra vez.");
 
   const key = photoKeyFromUrl(photoUrl);
   if (!key) return success("Registro excluído.");

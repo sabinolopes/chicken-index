@@ -25,7 +25,8 @@ const input: PriceInput = {
 const webp = () => new File([new Uint8Array(2048)], "etiqueta.webp", { type: "image/webp" });
 
 /** Banco em memória com a mesma interface do repositório real. */
-function memoryPrices(options: { failOn?: keyof PricesRepository } = {}) {
+/** `denyRemove` imita o RLS do Supabase: a exclusão não dá erro, só não apaga nenhuma linha. */
+function memoryPrices(options: { failOn?: keyof PricesRepository; denyRemove?: boolean } = {}) {
   const rows = new Map<string, PriceInput & { photo_url: string }>();
   const failIf = (method: keyof PricesRepository) => {
     if (options.failOn === method) throw new Error(`banco fora do ar (${method})`);
@@ -46,7 +47,8 @@ function memoryPrices(options: { failOn?: keyof PricesRepository } = {}) {
     },
     async remove(id) {
       failIf("remove");
-      rows.delete(id);
+      if (options.denyRemove) return false;
+      return rows.delete(id);
     },
     async update(id, details) {
       failIf("update");
@@ -178,6 +180,18 @@ describe("removePrice", () => {
     const result = await removePrice({ id: "id-1", prices: prices.repository, photos: photos.storage });
 
     expect(result).toEqual({ ok: true, message: "Registro excluído." });
+    expect(photos.files.size).toBe(1);
+  });
+
+  it("se o banco não apaga a linha (sem permissão), avisa e mantém a foto", async () => {
+    const photos = memoryPhotos();
+    const denied = memoryPrices({ denyRemove: true });
+    await registerPrice({ input, photo: webp(), prices: denied.repository, photos: photos.storage });
+
+    const result = await removePrice({ id: "id-1", prices: denied.repository, photos: photos.storage });
+
+    expect(result).toEqual({ ok: false, error: "O banco não excluiu o registro (sem permissão ou já excluído). Entre de novo e tente outra vez." });
+    expect(denied.rows.size).toBe(1);
     expect(photos.files.size).toBe(1);
   });
 

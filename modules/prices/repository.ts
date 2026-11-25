@@ -16,7 +16,8 @@ export interface PricesRepository {
   insert(record: PriceInput & { photo_url: string }): Promise<void>;
   /** URL da foto do registro, ou null se o registro não existe. */
   findPhotoUrl(id: string): Promise<string | null>;
-  remove(id: string): Promise<void>;
+  /** Exclui o registro; false se nenhuma linha saiu (id inexistente ou o RLS barrou). */
+  remove(id: string): Promise<boolean>;
   /** Corrige os dados da etiqueta; false se o registro não existe. */
   update(id: string, details: PriceDetails): Promise<boolean>;
 }
@@ -40,8 +41,10 @@ export function createPricesRepository(supabase: SupabaseClient): PricesReposito
       return data?.photo_url ?? null;
     },
     async remove(id) {
-      const { error } = await table().delete().eq("id", id);
+      // Sem permissão, o Supabase não dá erro: só não apaga. O select diz se alguma linha saiu.
+      const { data, error } = await table().delete().eq("id", id).select("id");
       if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
     },
     async update(id, details) {
       // O select devolve as linhas alteradas: sem nenhuma, o id não existe (ou o RLS barrou).

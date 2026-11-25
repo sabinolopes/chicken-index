@@ -14,7 +14,7 @@ export const contentType = "image/png";
 const TONE_STYLE: Record<PreviewTone, { color: string; background: string; arrow: string }> = {
   up: { color: "#b42318", background: "#fde8e7", arrow: "▲" },
   down: { color: "#047857", background: "#e7f6ee", arrow: "▼" },
-  stable: { color: "#57534e", background: "#f0ede8", arrow: "■" },
+  stable: { color: "#57534e", background: "#f0ede8", arrow: "=" }, // "■" não existe na Geist e quebrava a imagem
 };
 
 // Geist (licença OFL) em arquivo: a imagem não depende do Google Fonts no ar.
