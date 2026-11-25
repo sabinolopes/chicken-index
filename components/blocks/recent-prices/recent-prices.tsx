@@ -91,15 +91,18 @@ export function RecentPrices({ prices, total, suggestions }: RecentPricesProps) 
                 {pendingId === price.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
               </IconButton>
               {confirmingId === price.id && (
-                <div role="group" aria-label="Confirmar exclusão" className="flex basis-full flex-wrap items-center justify-end gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm">
-                  <span className="mr-auto text-red-800">
+                <div role="group" aria-label="Confirmar exclusão" className="flex basis-full flex-col gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm">
+                  <p className="text-red-800">
                     Excluir {formatBRL(price.price_per_kg)} em {price.market_name} ({formatDate(price.recorded_at)})? A foto também será apagada.
-                  </span>
-                  <Button onClick={() => setConfirmingId(null)}>Cancelar</Button>
-                  <Button onClick={() => remove(price)} className="border-red-300 text-red-700 hover:border-red-500">
-                    <Trash2 className="size-4" aria-hidden />
-                    Excluir
-                  </Button>
+                  </p>
+                  {/* Botões sempre abaixo da frase, lado a lado, no celular e no desktop. */}
+                  <div className="flex justify-end gap-2">
+                    <Button onClick={() => setConfirmingId(null)}>Cancelar</Button>
+                    <Button onClick={() => remove(price)} className="border-red-300 text-red-700 hover:border-red-500">
+                      <Trash2 className="size-4" aria-hidden />
+                      Excluir
+                    </Button>
+                  </div>
                 </div>
               )}
             </li>
